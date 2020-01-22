@@ -1,0 +1,17 @@
+# A demo custom resource for the Kopf example operators.
+apiVersion: tier.app/v1
+kind: AwsAuthRoleMapping
+metadata:
+  name: role-example-1
+  labels:
+    somelabel: somevalue
+  annotations:
+    someannotation: somevalue
+spec:
+  mappings:
+    - arn: arn:aws:iam::6666:role/test-role-1
+      username: test-role-1
+      usertype: Role
+      groups:
+      - viewers
+      - editors
