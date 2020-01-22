@@ -12,3 +12,4 @@ based on Kopf: https://kopf.readthedocs.io/en/latest/
 # testing 
 
 - kubectl apply -f test.yaml
+- kubectl -n kube-system get cm aws-auth -o yaml
