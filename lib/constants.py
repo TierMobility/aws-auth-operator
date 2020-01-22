@@ -1,2 +1,2 @@
-NAMESPACE = 'kube-system'
-CM_NAME = 'aws-auth'
+NAMESPACE = "kube-system"
+CM_NAME = "aws-auth"
