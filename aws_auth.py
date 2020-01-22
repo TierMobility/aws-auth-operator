@@ -74,4 +74,3 @@ def delete_fn(spec, meta, **kwarg):
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
     return {"Message": "All good"}
-
