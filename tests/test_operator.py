@@ -2,29 +2,31 @@ import aws_auth
 import kubernetes
 import yaml
 import copy
-
+import logging
+from lib.mappings import UserType
 
 DATA_DEFAULT = {
     "arn": "arn:aws:iam::6666:role/test-role-0",
     "username": "test-role-0",
-    "usertype": "Role",
+    "usertype": UserType.Role,
     "groups": ["viewers"],
 }
 
 DATA_CREATE = {
     "arn": "arn:aws:iam::6666:role/test-role-1",
     "username": "test-role-1",
-    "usertype": "Role",
+    "usertype": UserType.Role,
     "groups": ["viewers"],
 }
 
 DATA_UPDATE = {
     "arn": "arn:aws:iam::6666:role/test-role-1",
     "username": "test-role-1",
-    "usertype": "Role",
+    "usertype": UserType.Role,
     "groups": ["viewers", "editors"],
 }
 
+logger = logging.getLogger()
 
 def test_run():
     assert 1 == 1
@@ -35,7 +37,7 @@ def test_create(mocker):
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
-    aws_auth.create_fn(spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+    aws_auth.create_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -54,7 +56,7 @@ def test_delete(mocker):
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     aws_auth.write_config_map.return_value = build_cm()
-    aws_auth.delete_fn(spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+    aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -73,7 +75,7 @@ def test_update(mocker):
     aws_auth.write_config_map.return_value = build_cm(default=DATA_UPDATE)
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {"spec": {"mappings": [DATA_UPDATE]}}
-    aws_auth.update_fn(old=old, new=new, spec={}, diff={}, kwargs={})
+    aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -100,7 +102,7 @@ def rename_arn_keys(mappings):
     result = []
     for mapping_orig in mappings:
         mapping = copy.copy(mapping_orig)
-        if mapping["usertype"] == "Role":
+        if mapping["usertype"] == UserType.Role:
             mapping["rolearn"] = mapping.pop("arn")
         else:
             mapping["userarn"] = mapping.pop("arn")
