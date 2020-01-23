@@ -1,2 +1,6 @@
 NAMESPACE = "kube-system"
 CM_NAME = "aws-auth"
+PROTECTED_MAPPING = "aws-auth-protected-mappings"
+CRD_GROUP = "tier.app"
+CRD_NAME = "awsauthrolemappings"
+CRD_VERSION = "v1"

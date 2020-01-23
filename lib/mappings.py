@@ -1,37 +1,55 @@
 import yaml
+from enum import Enum
 from typing import List
 
+
+class UserType(Enum):
+    Role = "Role"
+    User = "User"
 
 class AuthMapping:
 
     arn = ""
     username = ""
     groups = []
-    usertype = ""
+    usertype: UserType
 
     def __init__(self, mapping: dict):
-        self.arn = mapping["arn"]
+
+        if "arn" in mapping.keys():
+            self.arn = mapping["arn"]
+            self.usertype = mapping["usertype"]
+        elif "rolearn" in mapping.keys():
+            self.arn = mapping["rolearn"]
+            self.usertype = UserType.Role
+        elif "userarn" in mapping.keys():
+            self.arn = mapping["userarn"]
+            self.usertype = UserType.User
+
         self.username = mapping["username"]
-        self.usertype = mapping["usertype"]
         self.groups = mapping["groups"]
 
     def get_mapping(self) -> dict:
         mapping = {"username": self.username, "groups": self.groups}
-        if self.usertype == "Role":
+        if self.usertype == UserType.Role:
             mapping["rolearn"] = self.arn
         else:
             mapping["userarn"] = self.arn
         return mapping
 
     def __repr__(self):
-        return "arn: {0}, usertype: {1} ".format(self.arn, self.usertype)
+        return "arn: {0}, usertype: {1}, groups: {2} ".format(self.arn, self.usertype, self.groups)
 
 
 class AuthMappingList:
 
     auth_mappings: List[AuthMapping]
 
-    def __init__(self, mappings: List):
+    def __init__(self, mappings = [], data = {}):
+        if "mapRoles" in data.keys():
+            mappings.extend(yaml.load(data["mapRoles"], Loader=yaml.FullLoader))
+        if "mapUsers" in data.keys():
+            mappings.extend(yaml.load(data["mapUsers"], Loader=yaml.FullLoader))
         self.auth_mappings = []
         for mapping in mappings:
             self.auth_mappings.append(AuthMapping(mapping))
@@ -55,7 +73,14 @@ class AuthMappingList:
     def get_roles_dict(self) -> List[dict]:
         result = []
         for auth_mapping in self.auth_mappings:
-            if auth_mapping.usertype == "Role":
+            if auth_mapping.usertype == UserType.Role:
+                result.append(auth_mapping.get_mapping())
+        return result
+    
+    def get_user_dict(self):
+        result = []
+        for auth_mapping in self.auth_mappings:
+            if auth_mapping.usertype == UserType.User:
                 result.append(auth_mapping.get_mapping())
         return result
 
