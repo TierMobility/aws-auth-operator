@@ -26,7 +26,15 @@ DATA_UPDATE = {
     "groups": ["viewers", "editors"],
 }
 
+DATA_NOT_CONTAINED = {
+    "arn": "arn:aws:iam::6666:role/test-role-2",
+    "username": "test-role-2",
+    "usertype": UserType.Role,
+    "groups": ["viewers", "editors"],
+}
+
 logger = logging.getLogger()
+
 
 def test_run():
     assert 1 == 1

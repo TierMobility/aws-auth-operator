@@ -18,8 +18,15 @@ def write_config_map(auth_config_map):
     )
 
 
-def update_config_map(auth_config_map, roles_list):
-    auth_config_map.data["mapRoles"] = yaml.dump(roles_list, default_flow_style=False)
+def update_config_map(auth_config_map, data):
+    if "mapRoles" in data:
+        auth_config_map.data["mapRoles"] = yaml.dump(
+            data["mapRoles"], default_flow_style=False
+        )
+    if "mapUsers" in data:
+        auth_config_map.data["mapUsers"] = yaml.dump(
+            data["mapUsers"], default_flow_style=False
+        )
     auth_config_map.metadata.namespace = None
     auth_config_map.metadata.uid = None
     auth_config_map.metadata.annotations = None

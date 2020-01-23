@@ -12,30 +12,34 @@ from lib import (
 from kubernetes.client.rest import ApiException
 from lib.constants import CRD_GROUP, CRD_VERSION, CRD_NAME, PROTECTED_MAPPING
 
-check_not_protected=lambda body, **_: body['metadata']['name'] != PROTECTED_MAPPING
+check_not_protected = lambda body, **_: body["metadata"]["name"] != PROTECTED_MAPPING
+
 
 @kopf.on.startup()
 def startup(logger, **kwargs):
     login_kubernetes(logger)
     pm = get_protected_mapping()
     if pm is None:
+        # get current configmap and save values in protected mapping
         auth_config_map = get_config_map()
-        role_mappings = AuthMappingList(data = auth_config_map.data)
+        role_mappings = AuthMappingList(data=auth_config_map.data)
         logger.info(role_mappings)
         write_protected_mapping(role_mappings.get_roles_dict())
     logger.info("Startup: {0}".format(pm))
 
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def create_fn(logger,spec, meta, **kwargs):
+def create_fn(logger, spec, meta, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     try:
         auth_config_map = get_config_map()
-        roles = yaml.load(auth_config_map.data["mapRoles"], Loader=yaml.FullLoader)
+        current_config_mapping = AuthMappingList(data=auth_config_map.data)
         # add new roles
-        roles_list = mappings_new.add_to_roles(roles)
-        auth_config_map = update_config_map(auth_config_map, roles_list)
+        current_config_mapping.merge_mappings(mappings_new)
+        auth_config_map = update_config_map(
+            auth_config_map, current_config_mapping.get_data()
+        )
         response = write_config_map(auth_config_map)
         response_roles = yaml.load(
             response.data.get("mapRoles"), Loader=yaml.FullLoader
@@ -51,22 +55,24 @@ def create_fn(logger,spec, meta, **kwargs):
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
-    old_roles = AuthMappingList(old["spec"]["mappings"])
-    new_roles = AuthMappingList(new["spec"]["mappings"])
+    old_role_mappings = AuthMappingList(old["spec"]["mappings"])
+    new_role_mappings = AuthMappingList(new["spec"]["mappings"])
     try:
         auth_config_map = get_config_map()
-        roles = yaml.load(auth_config_map.data["mapRoles"], Loader=yaml.FullLoader)
+        current_config_mapping = AuthMappingList(data=auth_config_map.data)
         # remove old stuff first
-        roles_list = old_roles.remove_from_roles(roles)
+        current_config_mapping.remove_mappings(old_role_mappings)
         # add new values
-        roles_list = new_roles.add_to_roles(roles_list)
-        auth_config_map = update_config_map(auth_config_map, roles_list)
+        current_config_mapping.merge_mappings(new_role_mappings)
+        auth_config_map = update_config_map(
+            auth_config_map, current_config_mapping.get_data()
+        )
         response = write_config_map(auth_config_map)
         response_roles = yaml.load(
             response.data.get("mapRoles"), Loader=yaml.FullLoader
         )
-        if new_roles.check_update(response_roles) == "failed":
-            logger.info(new_roles.get_roles_dict())
+        if new_role_mappings.check_update(response_roles) == "failed":
+            logger.info(new_role_mappings.get_roles_dict())
             raise kopf.PermanentError("Update Roles failed")
         else:
             logger.info(response)
@@ -81,10 +87,12 @@ def delete_fn(logger, spec, meta, **kwarg):
     mappings_delete = AuthMappingList(spec["mappings"])
     try:
         auth_config_map = get_config_map()
-        roles = yaml.load(auth_config_map.data["mapRoles"], Loader=yaml.FullLoader)
+        current_config_mapping = AuthMappingList(data=auth_config_map.data)
         # remove old roles
-        roles_list = mappings_delete.remove_from_roles(roles)
-        auth_config_map = update_config_map(auth_config_map, roles_list)
+        current_config_mapping.remove_mappings(mappings_delete)
+        auth_config_map = update_config_map(
+            auth_config_map, current_config_mapping.get_data()
+        )
         response = write_config_map(auth_config_map)
         response_roles = yaml.load(
             response.data.get("mapRoles"), Loader=yaml.FullLoader
