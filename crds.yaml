@@ -39,8 +39,6 @@ spec:
                     type: array
                     items:
                       type: string
-  subresources:
-    status: {}
   additionalPrinterColumns:
     - name: Message
       type: string

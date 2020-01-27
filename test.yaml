@@ -1,6 +1,6 @@
 # A demo custom resource for the Kopf example operators.
 apiVersion: tier.app/v1
-kind: AwsAuthRoleMapping
+kind: AwsAuthMapping
 metadata:
   name: role-example-1
   labels:
