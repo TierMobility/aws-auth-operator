@@ -1,3 +1,4 @@
+USE_PROTECTED_MAPPING = "USE_PROTECTED_MAPPING"
 NAMESPACE = "kube-system"
 CM_NAME = "aws-auth"
 PROTECTED_MAPPING = "aws-auth-protected-mappings"

@@ -36,20 +36,6 @@ def update_config_map(auth_config_map: V1ConfigMap, data: Dict):
     return auth_config_map
 
 
-def login_kubernetes(logger):
-    try:
-        kubernetes.config.load_incluster_config()  # cluster env vars
-        logger.debug("Client is configured in cluster with service account.")
-    except kubernetes.config.ConfigException as e1:
-        try:
-            kubernetes.config.load_kube_config()  # developer's config files
-            logger.debug("Client is configured via kubeconfig file.")
-        except kubernetes.config.ConfigException as e2:
-            raise kopf.PermanentError(
-                f"Cannot authenticate client neither in-cluster, nor via kubeconfig."
-            )
-
-
 def get_protected_mapping() -> Dict:
     api_instance = kubernetes.client.CustomObjectsApi()
     try:
