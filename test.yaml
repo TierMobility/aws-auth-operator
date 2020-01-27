@@ -9,7 +9,7 @@ metadata:
     someannotation: somevalue
 spec:
   mappings:
-    - arn: arn:aws:iam::199745669981:role/TM-cross-account-operator
+    - arn: arn:aws:iam::6666:role/test-role-1
       username: test-role-1
       usertype: Role
       groups:
