@@ -1,31 +1,33 @@
+import os
 import kopf
 import yaml
+from kubernetes.client.rest import ApiException
+
 from lib import (
     AuthMappingList,
-    update_config_map,
     get_config_map,
-    write_config_map,
     get_protected_mapping,
+    update_config_map,
+    write_config_map,
     write_protected_mapping,
-    login_kubernetes,
 )
-from kubernetes.client.rest import ApiException
-from lib.constants import CRD_GROUP, CRD_VERSION, CRD_NAME, PROTECTED_MAPPING
+from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] != PROTECTED_MAPPING
 
 
 @kopf.on.startup()
 def startup(logger, **kwargs):
-    login_kubernetes(logger)
-    pm = get_protected_mapping()
-    if pm is None:
-        # get current configmap and save values in protected mapping
-        auth_config_map = get_config_map()
-        role_mappings = AuthMappingList(data=auth_config_map.data)
-        logger.info(role_mappings)
-        write_protected_mapping(logger, role_mappings.get_roles_dict())
-    logger.info("Startup: {0}".format(pm))
+    if os.getenv(USE_PROTECTED_MAPPING) == "true":
+        kopf.login_via_client(logger = logger, **kwargs)
+        pm = get_protected_mapping()
+        if pm is None:
+            # get current configmap and save values in protected mapping
+            auth_config_map = get_config_map()
+            role_mappings = AuthMappingList(data=auth_config_map.data)
+            logger.info(role_mappings)
+            write_protected_mapping(logger, role_mappings.get_roles_dict())
+        logger.info("Startup: {0}".format(pm))
 
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -33,7 +35,7 @@ def create_fn(logger, spec, meta, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
-        return {'message': 'overwriting protected mapping not possible'}
+        return {"message": "overwriting protected mapping not possible"}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -59,6 +61,8 @@ def create_fn(logger, spec, meta, **kwargs):
 def update_fn(logger, spec, old, new, diff, **kwargs):
     old_role_mappings = AuthMappingList(old["spec"]["mappings"])
     new_role_mappings = AuthMappingList(new["spec"]["mappings"])
+    if overwrites_protected_mapping(logger, new_role_mappings):
+        return {"message": "overwriting protected mapping not possible"}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -87,6 +91,8 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
 def delete_fn(logger, spec, meta, **kwarg):
     logger.info(f"And here we are! DELETING: {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
+    if overwrites_protected_mapping(logger, mappings_delete):
+        return {"message": "overwriting protected mapping not possible"}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -108,12 +114,13 @@ def delete_fn(logger, spec, meta, **kwarg):
     return {"message": "All good"}
 
 
-def overwrites_protected_mapping(logger, check_mapping) -> bool:
-    pm = get_protected_mapping()
-    logger.info(f'Protected mapping: {pm}')
-    if pm is not None:
-        protected_mapping = AuthMappingList(pm['spec']['mappings'])
-        if check_mapping in protected_mapping:
-            logger.error('Overiding protected Entries not allowed!')
-            return True
+def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
+    if os.getenv(USE_PROTECTED_MAPPING) == "true":
+        pm = get_protected_mapping()
+        logger.info(f"Protected mapping: {pm}")
+        if pm is not None:
+            protected_mapping = AuthMappingList(pm["spec"]["mappings"])
+            if check_mapping in protected_mapping:
+                logger.error("Overiding protected Entries not allowed!")
+                return True
     return False
