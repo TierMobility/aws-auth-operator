@@ -61,7 +61,9 @@ class AuthMappingList:
 
     auth_mappings: Dict[str, AuthMapping]
 
-    def __init__(self, mappings=[], data={}):
+    def __init__(self, mappings = None, data={}):
+        if mappings is None:
+            mappings = []
         if "mapRoles" in data.keys():
             mappings.extend(yaml.load(data["mapRoles"], Loader=yaml.FullLoader))
         if "mapUsers" in data.keys():

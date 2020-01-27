@@ -3,6 +3,8 @@ import kubernetes
 import yaml
 import copy
 import logging
+import pytest
+import kopf
 from lib.mappings import UserType
 
 DATA_DEFAULT = {
@@ -95,6 +97,39 @@ def test_update(mocker):
     assert config_map[0].data == data
 
 
+def test_create_failed(mocker):
+    with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch("aws_auth.get_config_map")
+        mocker.patch("aws_auth.write_config_map")
+        aws_auth.get_config_map.return_value = build_cm()
+        aws_auth.write_config_map.return_value = build_cm(default={})
+        aws_auth.create_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+        
+    assert "Add Roles failed" in str(err)
+ 
+
+def test_update_failed(mocker):
+    with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch("aws_auth.get_config_map")
+        mocker.patch("aws_auth.write_config_map")
+        aws_auth.get_config_map.return_value = build_cm()
+        aws_auth.write_config_map.return_value = build_cm()
+        old = {"spec": {"mappings": [DATA_DEFAULT]}}
+        new = {"spec": {"mappings": [DATA_UPDATE]}}
+        aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
+
+    assert "Update Roles failed" in str(err)
+
+def test_delete_failed(mocker):
+    with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch("aws_auth.get_config_map")
+        mocker.patch("aws_auth.write_config_map")
+        aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+        aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+        aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+
+    assert "Delete Roles failed" in str(err)
+
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]
     if extra_data is not None:
@@ -108,6 +143,8 @@ def build_cm(default=DATA_DEFAULT, extra_data=None):
 
 def rename_arn_keys(mappings):
     result = []
+    if not mappings[0]:
+        return result
     for mapping_orig in mappings:
         mapping = copy.copy(mapping_orig)
         if mapping["usertype"] == UserType.Role:

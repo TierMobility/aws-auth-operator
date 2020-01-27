@@ -1,6 +1,7 @@
 import os
 import kopf
 import yaml
+import datetime
 from kubernetes.client.rest import ApiException
 
 from lib import (
@@ -35,7 +36,7 @@ def create_fn(logger, spec, meta, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
-        return {"message": "overwriting protected mapping not possible"}
+        return {"message": "overwriting protected mapping not possible", "timestamp":  str(datetime.datetime.now())}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -45,16 +46,14 @@ def create_fn(logger, spec, meta, **kwargs):
             auth_config_map, current_config_mapping.get_data()
         )
         response = write_config_map(auth_config_map)
-        response_roles = yaml.load(
-            response.data.get("mapRoles"), Loader=yaml.FullLoader
-        )
-        if mappings_new.check_update(response_roles) == "failed":
+        response_data = AuthMappingList(data=response.data)
+        if mappings_new not in response_data:
             raise kopf.PermanentError("Add Roles failed")
         else:
-            logger.info(response)
+            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good"}
+    return {"message": "All good", "timestamp": str(datetime.datetime.now())}
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -62,7 +61,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
     old_role_mappings = AuthMappingList(old["spec"]["mappings"])
     new_role_mappings = AuthMappingList(new["spec"]["mappings"])
     if overwrites_protected_mapping(logger, new_role_mappings):
-        return {"message": "overwriting protected mapping not possible"}
+        return {"message": "overwriting protected mapping not possible", "timestamp":  str(datetime.datetime.now())}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -74,25 +73,22 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
             auth_config_map, current_config_mapping.get_data()
         )
         response = write_config_map(auth_config_map)
-        response_roles = yaml.load(
-            response.data.get("mapRoles"), Loader=yaml.FullLoader
-        )
-        if new_role_mappings.check_update(response_roles) == "failed":
-            logger.info(new_role_mappings.get_roles_dict())
+        response_data = AuthMappingList(data=response.data)
+        if new_role_mappings not in response_data:
             raise kopf.PermanentError("Update Roles failed")
         else:
-            logger.info(response)
+            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good"}
+    return {"message": "All good", "timestamp": str(datetime.datetime.now())}
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def delete_fn(logger, spec, meta, **kwarg):
-    logger.info(f"And here we are! DELETING: {spec}")
+    logger.info(f"DELETING: {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
-        return {"message": "overwriting protected mapping not possible"}
+        kopf.PermanentError("Overwriting protected mapping not possible!")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -102,16 +98,14 @@ def delete_fn(logger, spec, meta, **kwarg):
             auth_config_map, current_config_mapping.get_data()
         )
         response = write_config_map(auth_config_map)
-        response_roles = yaml.load(
-            response.data.get("mapRoles"), Loader=yaml.FullLoader
-        )
-        if mappings_delete.check_delete(response_roles) == "failed":
+        response_data = AuthMappingList(data=response.data)
+        if mappings_delete in response_data:
             raise kopf.PermanentError("Delete Roles failed")
         else:
-            logger.info(response)
+            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good"}
+    return {"message": "All good", "timestamp":  str(datetime.datetime.now())}
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
