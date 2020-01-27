@@ -24,7 +24,7 @@ def startup(logger, **kwargs):
         auth_config_map = get_config_map()
         role_mappings = AuthMappingList(data=auth_config_map.data)
         logger.info(role_mappings)
-        write_protected_mapping(role_mappings.get_roles_dict())
+        write_protected_mapping(logger, role_mappings.get_roles_dict())
     logger.info("Startup: {0}".format(pm))
 
 
@@ -32,6 +32,8 @@ def startup(logger, **kwargs):
 def create_fn(logger, spec, meta, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
+    if overwrites_protected_mapping(logger, mappings_new):
+        return {'message': 'overwriting protected mapping not possible'}
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -50,7 +52,7 @@ def create_fn(logger, spec, meta, **kwargs):
             logger.info(response)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"Message": "All good"}
+    return {"message": "All good"}
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -78,7 +80,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
             logger.info(response)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"Message": "All good"}
+    return {"message": "All good"}
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -103,4 +105,15 @@ def delete_fn(logger, spec, meta, **kwarg):
             logger.info(response)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"Message": "All good"}
+    return {"message": "All good"}
+
+
+def overwrites_protected_mapping(logger, check_mapping) -> bool:
+    pm = get_protected_mapping()
+    logger.info(f'Protected mapping: {pm}')
+    if pm is not None:
+        protected_mapping = AuthMappingList(pm['spec']['mappings'])
+        if check_mapping in protected_mapping:
+            logger.error('Overiding protected Entries not allowed!')
+            return True
+    return False

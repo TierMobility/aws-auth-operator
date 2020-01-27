@@ -25,7 +25,7 @@ class AuthMapping:
     groups: List
     usertype: UserType
 
-    def __init__(self, mapping: dict):
+    def __init__(self, mapping: Dict):
 
         if "arn" in mapping.keys():
             self.arn = mapping["arn"]
@@ -82,14 +82,14 @@ class AuthMappingList:
             if new_mapping_arn in self.auth_mappings.keys():
                 del self.auth_mappings[new_mapping_arn]
 
-    def get_roles_dict(self) -> List[dict]:
+    def get_roles_dict(self) -> List[Dict]:
         result = []
         for auth_mapping in self.auth_mappings.values():
             if auth_mapping.usertype == UserType.Role:
                 result.append(auth_mapping.get_mapping())
         return result
 
-    def get_user_dict(self) -> List[dict]:
+    def get_user_dict(self) -> List[Dict]:
         result = []
         for auth_mapping in self.auth_mappings.values():
             if auth_mapping.usertype == UserType.User:
@@ -119,7 +119,7 @@ class AuthMappingList:
         other_keys = set(other.auth_mappings.keys())
         return len(own_keys.intersection(other_keys)) > 0
 
-    def check_update(self, response_roles: dict) -> str:
+    def check_update(self, response_roles: Dict) -> str:
         role_arns = []
         new_role_arns = []
         for role in response_roles:
@@ -130,7 +130,7 @@ class AuthMappingList:
             "success" if all(elem in role_arns for elem in new_role_arns) else "failed"
         )
 
-    def check_delete(self, response_roles: dict) -> str:
+    def check_delete(self, response_roles: Dict) -> str:
         role_arns = []
         new_role_arns = []
         for role in response_roles:
