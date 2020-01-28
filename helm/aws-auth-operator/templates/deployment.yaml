@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aws-auth-operator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "aws-auth-operator.name" . }}
+    helm.sh/chart: {{ include "aws-auth-operator.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "aws-auth-operator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "aws-auth-operator.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        timestamp: {{ date "20060102150405" .Release.Time | quote }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.healthcheck.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              initialDelaySeconds: 5
+              periodSeconds: 30
+              scheme: HTTP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              initialDelaySeconds: 5
+              periodSeconds: 30
+              scheme: HTTP
+          envFrom:
+            - configMapRef:
+                name: {{ template "aws-auth-operator.fullname" . }}
+          env:
+            - name: PORT
+              value: {{ .Values.healthcheck.port | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

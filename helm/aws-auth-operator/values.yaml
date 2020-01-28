@@ -1,0 +1,20 @@
+
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+alerts:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+healthcheck:
+  port: 8080
