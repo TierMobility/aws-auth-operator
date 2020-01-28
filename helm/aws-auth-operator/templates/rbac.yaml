@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: {{ template "aws-auth-operator.fullname" . }}
+  labels:
+    app: {{ template "aws-auth-operator.name" . }}
+    chart: {{ template "aws-auth-operator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+  - apiGroups: ["tier.app"]
+    resources: ["awsauthmappings"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["aws-auth"]
+    verbs: ["*"]
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "aws-auth-operator.fullname" . }}
+  labels:
+    app: {{ template "aws-auth-operator.name" . }}
+    chart: {{ template "aws-auth-operator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "aws-auth-operator.fullname" . }}
+subjects:
+  - name: {{ template "aws-auth-operator.name" . }}
+    namespace: {{ .Release.Namespace | quote }}
+    kind: ServiceAccount

@@ -1,0 +1,17 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "aws-auth-operator.fullname" . }}
+  labels:
+    app: {{ template "aws-auth-operator.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+
+data:
+{{- if .Values.env.variables}}
+{{- range $key, $value := .Values.env.variables.data }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- end }}

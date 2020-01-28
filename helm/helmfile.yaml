@@ -1,0 +1,13 @@
+
+releases:
+  - name: aws-auth-operator
+    chart: aws-auth-operator
+    namespace: aws-auth-operator
+    wait: true
+    timeout: 120
+    values:
+      - environments/{{ env "ENVIRONMENT" | default "ops" }}/values.yaml
+      - environment: {{ env "ENVIRONMENT" | default "ops" | quote }}
+      - image:
+          tag: '{{ env "IMAGE_TAG" | default "latest" }}'
+          repository: '{{ env "ECR_REPOSITORY_URL" }}'

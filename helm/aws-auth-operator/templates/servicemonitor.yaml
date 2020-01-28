@@ -1,0 +1,40 @@
+{{- if .Values.prometheus.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "aws-auth-operator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "aws-auth-operator.name" . }}
+    helm.sh/chart: {{ include "aws-auth-operator.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: prometheus-blackbox-exporter
+      app.kubernetes.io/name: prometheus-blackbox-exporter
+  namespaceSelector:
+    matchNames:
+    - cluster-service-prometheus
+  joblabel: aws-auth-operator
+  endpoints:
+  {{- if .Values.prometheus.http_hosts }}
+  - interval: 60s
+    port: http
+    params:
+      module:
+      - http_2xx
+      target:
+      {{- range .Values.prometheus.http_hosts }}
+      - {{ . | quote }}
+      {{- end }}
+    path: "/probe"
+    targetPort: 9115
+    relabelings:
+    - action: replace
+      targetLabels:
+      - job
+      targetLabel: job
+      replacement: {{ include "aws-auth-operator.name" . }}
+  {{- end }}
+{{- end -}}

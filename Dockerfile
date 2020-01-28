@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
  
 COPY . .
 
-CMD kopf run --standalone ./aws_auth.py
+CMD kopf run --standalone --liveness=http://:$PORT/healthz ./aws_auth.py
