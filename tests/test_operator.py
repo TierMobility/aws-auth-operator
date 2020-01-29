@@ -47,7 +47,10 @@ def test_create(mocker):
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
-    aws_auth.create_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+    message = aws_auth.create_fn(
+        logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={}
+    )
+    assert "All good" == message["message"]
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -66,7 +69,10 @@ def test_delete(mocker):
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     aws_auth.write_config_map.return_value = build_cm()
-    aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
+    message = aws_auth.delete_fn(
+        logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={}
+    )
+    assert "All good" == message["message"]
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -85,7 +91,8 @@ def test_update(mocker):
     aws_auth.write_config_map.return_value = build_cm(default=DATA_UPDATE)
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {"spec": {"mappings": [DATA_UPDATE]}}
-    aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
+    message = aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
+    assert "All good" == message["message"]
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
@@ -104,9 +111,9 @@ def test_create_failed(mocker):
         aws_auth.get_config_map.return_value = build_cm()
         aws_auth.write_config_map.return_value = build_cm(default={})
         aws_auth.create_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
-        
+
     assert "Add Roles failed" in str(err)
- 
+
 
 def test_update_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
@@ -120,6 +127,7 @@ def test_update_failed(mocker):
 
     assert "Update Roles failed" in str(err)
 
+
 def test_delete_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
         mocker.patch("aws_auth.get_config_map")
@@ -129,6 +137,24 @@ def test_delete_failed(mocker):
         aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
 
     assert "Delete Roles failed" in str(err)
+
+def test_create_invalid_spec():
+    message = aws_auth.create_fn(
+        logger, spec={}, meta={}, kwargs={}
+    )
+    assert "invalid schema {}" == message["message"]
+
+def test_update_invalid_spec():
+    old = {"spec": {"mappings": [DATA_DEFAULT]}}
+    new = {}
+    message = message = aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
+    assert "invalid schema {}" == message["message"]
+
+def test_delete_invalid_spec():
+    message = aws_auth.delete_fn(
+        logger, spec={}, meta={}, kwargs={}
+    )
+    assert "invalid schema {}" == message["message"]
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]

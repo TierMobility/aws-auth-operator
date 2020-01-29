@@ -1,7 +1,6 @@
 import os
 import kopf
 import yaml
-import datetime
 from kubernetes.client.rest import ApiException
 
 from lib import (
@@ -11,6 +10,7 @@ from lib import (
     update_config_map,
     write_config_map,
     write_protected_mapping,
+    get_result_message,
 )
 from lib.constants import *
 
@@ -20,7 +20,7 @@ check_not_protected = lambda body, **_: body["metadata"]["name"] != PROTECTED_MA
 @kopf.on.startup()
 def startup(logger, **kwargs):
     if os.getenv(USE_PROTECTED_MAPPING) == "true":
-        kopf.login_via_client(logger = logger, **kwargs)
+        kopf.login_via_client(logger=logger, **kwargs)
         pm = get_protected_mapping()
         if pm is None:
             # get current configmap and save values in protected mapping
@@ -34,9 +34,11 @@ def startup(logger, **kwargs):
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def create_fn(logger, spec, meta, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
+    if not spec or "mappings" not in spec:
+        return get_result_message(f"invalid schema {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
-        return {"message": "overwriting protected mapping not possible", "timestamp":  str(datetime.datetime.now())}
+        return get_result_message("overwriting protected mapping not possible")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -53,15 +55,17 @@ def create_fn(logger, spec, meta, **kwargs):
             logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good", "timestamp": str(datetime.datetime.now())}
+    return get_result_message("All good")
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
+    if not new or "spec" not in new or "mappings" not in new["spec"]:
+        return get_result_message(f"invalid schema {new}")
     old_role_mappings = AuthMappingList(old["spec"]["mappings"])
     new_role_mappings = AuthMappingList(new["spec"]["mappings"])
     if overwrites_protected_mapping(logger, new_role_mappings):
-        return {"message": "overwriting protected mapping not possible", "timestamp":  str(datetime.datetime.now())}
+        return get_result_message("overwriting protected mapping not possible")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -80,12 +84,14 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
             logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good", "timestamp": str(datetime.datetime.now())}
+    return get_result_message("All good")
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def delete_fn(logger, spec, meta, **kwarg):
     logger.info(f"DELETING: {spec}")
+    if not spec or "mappings" not in spec:
+        return get_result_message(f"invalid schema {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
         kopf.PermanentError("Overwriting protected mapping not possible!")
@@ -105,7 +111,7 @@ def delete_fn(logger, spec, meta, **kwarg):
             logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
-    return {"message": "All good", "timestamp":  str(datetime.datetime.now())}
+    return get_result_message("All good")
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
