@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "aws-auth-operator.name" . }}
@@ -21,6 +23,7 @@ spec:
       annotations:
         timestamp: {{ date "20060102150405" .Release.Time | quote }}
     spec:
+      serviceAccountName: {{ include "aws-auth-operator.name" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

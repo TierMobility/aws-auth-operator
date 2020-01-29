@@ -10,7 +10,7 @@ metadata:
 rules:
   - apiGroups: ["tier.app"]
     resources: ["awsauthmappings"]
-    verbs: ["get", "list", "watch", "update", "create", "delete"]
+    verbs: ["*"]
   - apiGroups: [apiextensions.k8s.io]
     resources: [customresourcedefinitions]
     verbs: ["list", "get", "watch"]
