@@ -61,7 +61,7 @@ class AuthMappingList:
 
     auth_mappings: Dict[str, AuthMapping]
 
-    def __init__(self, mappings = None, data={}):
+    def __init__(self, mappings=None, data={}):
         if mappings is None:
             mappings = []
         if "mapRoles" in data.keys():
