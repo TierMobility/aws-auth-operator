@@ -60,10 +60,17 @@ def create_fn(logger, spec, meta, **kwargs):
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
-    if not new or "spec" not in new or "mappings" not in new["spec"]:
+    if not new or "spec" not in new: 
         return get_result_message(f"invalid schema {new}")
-    old_role_mappings = AuthMappingList(old["spec"]["mappings"])
-    new_role_mappings = AuthMappingList(new["spec"]["mappings"])
+    if "mappings" not in new["spec"]:
+        new_role_mappings = AuthMappingList()
+    else:
+        new_role_mappings = AuthMappingList(new["spec"]["mappings"])
+    if not old or 'spec' not in old or 'mappings' not in old['spec']:
+        old_role_mappings = AuthMappingList()
+    else:        
+        old_role_mappings = AuthMappingList(old["spec"]["mappings"])
+    
     if overwrites_protected_mapping(logger, new_role_mappings):
         return get_result_message("overwriting protected mapping not possible")
     try:
@@ -78,7 +85,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
         )
         response = write_config_map(auth_config_map)
         response_data = AuthMappingList(data=response.data)
-        if new_role_mappings not in response_data:
+        if len(new_role_mappings) > 0 and new_role_mappings not in response_data:
             raise kopf.PermanentError("Update Roles failed")
         else:
             logger.info(response.data)
