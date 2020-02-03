@@ -121,6 +121,9 @@ class AuthMappingList:
         other_keys = set(other.auth_mappings.keys())
         return len(own_keys.intersection(other_keys)) > 0
 
+    def __len__(self):
+        return len(self.auth_mappings)
+
     def check_update(self, response_roles: Dict) -> str:
         role_arns = []
         new_role_arns = []
