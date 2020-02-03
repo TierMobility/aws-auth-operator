@@ -1,3 +1,4 @@
 env:
-  data:
-    USE_PROTECTED_MAPPING=true
+  variables:
+    data:
+      USE_PROTECTED_MAPPING: true
