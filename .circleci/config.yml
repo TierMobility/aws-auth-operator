@@ -1,0 +1,136 @@
+version: 2.1
+
+orbs:
+  awscli: circleci/aws-cli@0.1.6
+  aws-ecr: circleci/aws-ecr@4.0.1
+
+jobs:
+  pytest:
+    docker:
+      - image: circleci/python:3.7-stretch
+    environment:
+      ENVIRONMENT: test
+    steps:
+      - checkout
+      - run: pip install pipenv
+      - run: pipenv install 
+      - run: pipenv run pytest
+
+  build-and-push-image:
+    description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
+
+    environment:
+      REPOSITORY_NAME: 'tier/aws-auth-operator'
+
+    docker:
+      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+
+    working_directory: ~/repo
+    steps:
+      - setup_remote_docker:  # required for running docker commands, creates a remote environment
+          docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
+      - aws-ecr/build-and-push-image:
+          region: AWS_DEFAULT_REGION
+          create-repo: true
+          repo: ${REPOSITORY_NAME}
+          tag: ${CIRCLE_SHA1:0:8}
+      # this build will essentially just tag the image that has already been built
+      - aws-ecr/build-and-push-image:
+          region: AWS_DEFAULT_REGION
+          repo: ${REPOSITORY_NAME}
+          tag: latest-${CIRCLE_BRANCH//\//-}
+      - run:
+          name: "Set ECR repo permissions to allow access from other AWS accounts"
+          command: >
+            aws ecr --region ${AWS_DEFAULT_REGION} set-repository-policy --repository-name ${REPOSITORY_NAME}
+            --policy-text '{
+                            "Version": "2008-10-17",
+                            "Statement": [
+                              {
+                                "Sid": "new statement",
+                                "Effect": "Allow",
+                                "Principal": {
+                                  "AWS": [
+                                    "arn:aws:iam::075108987694:root",
+                                    "arn:aws:iam::199745669981:root"
+                                  ]
+                                },
+                                "Action": [
+                                  "ecr:BatchCheckLayerAvailability",
+                                  "ecr:BatchGetImage",
+                                  "ecr:GetDownloadUrlForLayer",
+                                  "ecr:ListImages"
+                                ]
+                              }
+                            ]
+                          }'
+
+
+  deploy-to-stage:
+    environment:
+      ENVIRONMENT: 'stage'
+      IMAGE_NAME: 'aws-auth-operator'
+
+    docker:
+    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+
+    working_directory: ~/repo
+
+    steps:
+    - awscli/configure
+    - checkout
+
+    - run:
+        name: "Deploy"
+        command: |
+          ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL:-$(aws ecr describe-repositories --query "repositories[*].repositoryUri" --output text --repository-names tier/${IMAGE_NAME})}
+          aws --region eu-central-1 eks update-kubeconfig --name main-cluster-staging
+          kubectl cluster-info
+          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
+          cd helm && helmfile --log-level debug sync && cd ..
+
+
+  deploy-to-production:
+    environment:
+      ENVIRONMENT: 'production'
+
+    docker:
+    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+
+    working_directory: ~/repo
+
+    steps:
+    - awscli/configure
+    - checkout
+
+    - run:
+        name: Deploy
+        working_directory: ~/repo
+        command: |
+          aws --region eu-central-1 eks update-kubeconfig --name main-cluster-production
+          kubectl cluster-info
+          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
+          cd .k8s && helmfile --log-level debug sync && cd ..
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+    - pytest
+    - build-and-push-image:
+        context: global-production
+        requires: 
+          - pytest
+    - deploy-to-stage:
+        context: global-staging
+        requires:
+          - build-and-push-image
+    # - deploy-to-production:
+    #     context: global-production
+    #     requires:
+    #       - deploy-to-stage
+    #     filters:
+    #         branches:
+    #           only: master
+
+

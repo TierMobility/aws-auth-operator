@@ -60,17 +60,17 @@ def create_fn(logger, spec, meta, **kwargs):
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
-    if not new or "spec" not in new: 
+    if not new or "spec" not in new:
         return get_result_message(f"invalid schema {new}")
     if "mappings" not in new["spec"]:
         new_role_mappings = AuthMappingList()
     else:
         new_role_mappings = AuthMappingList(new["spec"]["mappings"])
-    if not old or 'spec' not in old or 'mappings' not in old['spec']:
+    if not old or "spec" not in old or "mappings" not in old["spec"]:
         old_role_mappings = AuthMappingList()
-    else:        
+    else:
         old_role_mappings = AuthMappingList(old["spec"]["mappings"])
-    
+
     if overwrites_protected_mapping(logger, new_role_mappings):
         return get_result_message("overwriting protected mapping not possible")
     try:
