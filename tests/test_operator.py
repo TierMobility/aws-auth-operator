@@ -138,23 +138,25 @@ def test_delete_failed(mocker):
 
     assert "Delete Roles failed" in str(err)
 
+
 def test_create_invalid_spec():
-    message = aws_auth.create_fn(
-        logger, spec={}, meta={}, kwargs={}
-    )
+    message = aws_auth.create_fn(logger, spec={}, meta={}, kwargs={})
     assert "invalid schema {}" == message["message"]
+
 
 def test_update_invalid_spec():
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {}
-    message = message = aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, kwargs={})
-    assert "invalid schema {}" == message["message"]
-
-def test_delete_invalid_spec():
-    message = aws_auth.delete_fn(
-        logger, spec={}, meta={}, kwargs={}
+    message = message = aws_auth.update_fn(
+        logger, old=old, new=new, spec={}, diff={}, kwargs={}
     )
     assert "invalid schema {}" == message["message"]
+
+
+def test_delete_invalid_spec():
+    message = aws_auth.delete_fn(logger, spec={}, meta={}, kwargs={})
+    assert "invalid schema {}" == message["message"]
+
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]
