@@ -64,7 +64,16 @@ jobs:
                               }
                             ]
                           }'
-
+      - run:
+          name: "Set Repository name"
+          command: |
+            mkdir -p artifacts
+            ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL:-$(aws ecr describe-repositories --query "repositories[*].repositoryUri" --output text --repository-names tier/${IMAGE_NAME})}
+            echo $ECR_REPOSITORY_URL > artifacts/repository_url
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
 
   deploy-to-stage:
     environment:
@@ -79,11 +88,14 @@ jobs:
     steps:
     - awscli/configure
     - checkout
-
+    - attach_workspace:
+        at: /tmp/workspace
+    - run:
+        name: source_environment
+        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
         name: "Deploy"
         command: |
-          ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL:-$(aws ecr describe-repositories --query "repositories[*].repositoryUri" --output text --repository-names tier/${IMAGE_NAME})}
           aws --region eu-central-1 eks update-kubeconfig --name main-cluster-staging
           kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
