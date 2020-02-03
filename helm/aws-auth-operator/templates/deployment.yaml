@@ -36,16 +36,18 @@ spec:
             httpGet:
               path: /healthz
               port: http
-              initialDelaySeconds: 5
-              periodSeconds: 60
               scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 60
+            
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
-              initialDelaySeconds: 5
-              periodSeconds: 60
               scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 60
+              
           envFrom:
             - configMapRef:
                 name: {{ template "aws-auth-operator.fullname" . }}
