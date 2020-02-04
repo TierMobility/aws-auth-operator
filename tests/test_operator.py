@@ -43,6 +43,7 @@ def test_run():
 
 
 def test_create(mocker):
+    mocker.patch('aws_auth.get_protected_mapping')
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm()
@@ -65,6 +66,7 @@ def test_create(mocker):
 
 
 def test_delete(mocker):
+    mocker.patch('aws_auth.get_protected_mapping')
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
@@ -85,6 +87,7 @@ def test_delete(mocker):
 
 
 def test_update(mocker):
+    mocker.patch('aws_auth.get_protected_mapping')
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm()
@@ -106,6 +109,7 @@ def test_update(mocker):
 
 def test_create_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch('aws_auth.get_protected_mapping')
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm()
@@ -117,6 +121,7 @@ def test_create_failed(mocker):
 
 def test_update_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch('aws_auth.get_protected_mapping')
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm()
@@ -130,6 +135,7 @@ def test_update_failed(mocker):
 
 def test_delete_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
+        mocker.patch('aws_auth.get_protected_mapping')
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
@@ -156,6 +162,15 @@ def test_update_invalid_spec():
 def test_delete_invalid_spec():
     message = aws_auth.delete_fn(logger, spec={}, meta={}, kwargs={})
     assert "invalid schema {}" == message["message"]
+
+
+def test_startup(mocker):
+    mocker.patch('aws_auth.get_protected_mapping')
+    mocker.patch("aws_auth.get_config_map")
+    mocker.patch('aws_auth.write_protected_mapping')
+    aws_auth.get_protected_mapping.return_value = {'mapRoles':[]}
+    aws_auth.startup(logger)
+    pass
 
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
