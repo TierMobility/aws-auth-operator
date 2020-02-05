@@ -43,9 +43,12 @@ def test_run():
 
 
 def test_create(mocker):
-    mocker.patch('aws_auth.get_protected_mapping')
+    mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
+    aws_auth.get_protected_mapping.return_value = {
+        "spec": {"mappings": [DATA_NOT_CONTAINED]}
+    }
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     message = aws_auth.create_fn(
@@ -55,6 +58,7 @@ def test_create(mocker):
     # asserts
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_config_map.assert_called_once()
+    aws_auth.get_protected_mapping.assert_called_once()
     config_map, _ = aws_auth.write_config_map.call_args
     assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
     data = {
@@ -66,7 +70,7 @@ def test_create(mocker):
 
 
 def test_delete(mocker):
-    mocker.patch('aws_auth.get_protected_mapping')
+    mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
@@ -87,7 +91,7 @@ def test_delete(mocker):
 
 
 def test_update(mocker):
-    mocker.patch('aws_auth.get_protected_mapping')
+    mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
     aws_auth.get_config_map.return_value = build_cm()
@@ -109,7 +113,7 @@ def test_update(mocker):
 
 def test_create_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
-        mocker.patch('aws_auth.get_protected_mapping')
+        mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm()
@@ -121,7 +125,7 @@ def test_create_failed(mocker):
 
 def test_update_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
-        mocker.patch('aws_auth.get_protected_mapping')
+        mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm()
@@ -135,7 +139,7 @@ def test_update_failed(mocker):
 
 def test_delete_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
-        mocker.patch('aws_auth.get_protected_mapping')
+        mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
         aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
@@ -165,13 +169,33 @@ def test_delete_invalid_spec():
 
 
 def test_startup(mocker):
-    mocker.patch('aws_auth.get_protected_mapping')
+    mocker.patch("aws_auth.kopf.login_via_client")
+    mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
-    mocker.patch('aws_auth.write_protected_mapping')
-    aws_auth.get_protected_mapping.return_value = {'mapRoles':[]}
+    mocker.patch("aws_auth.write_protected_mapping")
+    aws_auth.get_protected_mapping.return_value = None
     aws_auth.startup(logger)
-    pass
+    aws_auth.get_protected_mapping.assert_called_once()
+    aws_auth.get_config_map.assert_called_once()
+    aws_auth.write_protected_mapping.assert_called_once()
 
+def test_create_overwrite_protected_mapping(mocker):
+    mocker.patch("aws_auth.get_protected_mapping")
+    mocker.patch("aws_auth.get_config_map")
+    mocker.patch("aws_auth.write_config_map")
+    aws_auth.get_protected_mapping.return_value = {
+        "spec": {"mappings": [DATA_CREATE]}
+    }
+    aws_auth.get_config_map.return_value = build_cm()
+    aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+    message = aws_auth.create_fn(
+        logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={}
+    )
+    assert "overwriting protected mapping not possible" == message["message"]
+    # asserts
+    aws_auth.get_config_map.assert_not_called()
+    aws_auth.write_config_map.assert_not_called()
+    aws_auth.get_protected_mapping.assert_called_once()
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]
