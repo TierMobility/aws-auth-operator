@@ -1,7 +1,8 @@
-FROM python:3.7-slim-stretch
+FROM python:3.7-alpine
 ENV BASEDIR /srv/app/
 
 WORKDIR ${BASEDIR}
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev
 ADD requirements.txt requirements.txt
 RUN pip install -r requirements.txt
  
