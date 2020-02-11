@@ -8,7 +8,7 @@ pylint = "*"
 rope = "*"
 
 [packages]
-kopf = "==0.25rc1"
+kopf = "==0.25"
 kubernetes = "==10.0.1"
 pyyaml = "==5.3"
 pytest = "==5.3.4"
