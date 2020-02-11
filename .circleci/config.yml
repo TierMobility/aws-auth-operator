@@ -121,7 +121,7 @@ jobs:
           aws --region eu-central-1 eks update-kubeconfig --name main-cluster-production
           kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          cd .k8s && helmfile --log-level debug sync && cd ..
+          cd helm && helmfile --log-level debug sync && cd ..
 
 workflows:
   version: 2
