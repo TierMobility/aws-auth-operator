@@ -113,7 +113,11 @@ jobs:
     steps:
     - awscli/configure
     - checkout
-
+    - attach_workspace:
+        at: /tmp/workspace
+    - run:
+        name: source_environment
+        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
         name: Deploy
         working_directory: ~/repo
