@@ -179,13 +179,12 @@ def test_startup(mocker):
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_protected_mapping.assert_called_once()
 
+
 def test_create_overwrite_protected_mapping(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
-    aws_auth.get_protected_mapping.return_value = {
-        "spec": {"mappings": [DATA_CREATE]}
-    }
+    aws_auth.get_protected_mapping.return_value = {"spec": {"mappings": [DATA_CREATE]}}
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     message = aws_auth.create_fn(
@@ -196,6 +195,7 @@ def test_create_overwrite_protected_mapping(mocker):
     aws_auth.get_config_map.assert_not_called()
     aws_auth.write_config_map.assert_not_called()
     aws_auth.get_protected_mapping.assert_called_once()
+
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]

@@ -56,6 +56,13 @@ class AuthMapping:
     def __hash__(self):
         return hash((self.arn, self.usertype))
 
+    def as_dict(self) -> Dict:
+        return {
+            "arn": self.arn,
+            "username": self.username,
+            "groups": self.groups,
+            "usertype": self.groups,
+        }
 
 class AuthMappingList:
 
@@ -96,6 +103,12 @@ class AuthMappingList:
         for auth_mapping in self.auth_mappings.values():
             if auth_mapping.usertype == UserType.User:
                 result.append(auth_mapping.get_mapping())
+        return result
+
+    def get_values(self)  -> List[Dict]:
+        result = []
+        for auth_mapping in self.auth_mappings.values():
+            result.append(auth_mapping.as_dict())
         return result
 
     def get_data(self) -> Dict:
