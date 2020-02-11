@@ -27,7 +27,7 @@ def startup(logger, **kwargs):
             auth_config_map = get_config_map()
             role_mappings = AuthMappingList(data=auth_config_map.data)
             logger.info(role_mappings)
-            write_protected_mapping(logger, role_mappings.get_roles_dict())
+            write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
 
 
