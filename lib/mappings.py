@@ -61,8 +61,9 @@ class AuthMapping:
             "arn": self.arn,
             "username": self.username,
             "groups": self.groups,
-            "usertype": self.groups,
+            "usertype": self.usertype.name,
         }
+
 
 class AuthMappingList:
 
@@ -105,7 +106,7 @@ class AuthMappingList:
                 result.append(auth_mapping.get_mapping())
         return result
 
-    def get_values(self)  -> List[Dict]:
+    def get_values(self) -> List[Dict]:
         result = []
         for auth_mapping in self.auth_mappings.values():
             result.append(auth_mapping.as_dict())
