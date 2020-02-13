@@ -120,6 +120,10 @@ def delete_fn(logger, spec, meta, **kwarg):
         raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("All good")
 
+@kopf.on.update("", "v1", "configmaps", when=lambda body, **_: body["metadata"]["name"] == "aws-auth")
+def check_config_map(logger, spec, old, new, diff, **kwargs):
+    logger.info(diff)
+    pass
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
     if os.getenv(USE_PROTECTED_MAPPING) == "true":
