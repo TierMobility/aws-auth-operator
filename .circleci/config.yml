@@ -140,6 +140,9 @@ workflows:
         context: global-staging
         requires:
           - build-and-push-image
+        filters:
+            branches:
+              only: master
     - deploy-to-production:
         context: global-production
         requires:
