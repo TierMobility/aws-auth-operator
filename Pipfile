@@ -4,8 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-pylint = "*"
-rope = "*"
+pylint = "==2.4.4"
+rope = "==0.16.0"
 
 [packages]
 kopf = "==0.25"
@@ -13,8 +13,8 @@ kubernetes = "==10.0.1"
 pyyaml = "==5.3"
 pytest = "==5.3.4"
 pytest-mock = "==2.0.0"
-pytest-cov = "*"
-pytest-env = "*"
+pytest-cov = ""==2.8.1"
+pytest-env = "==0.6.2"
 
 [requires]
 python_version = "3.7"
