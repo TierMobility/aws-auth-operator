@@ -122,8 +122,13 @@ def delete_fn(logger, spec, meta, **kwarg):
 
 @kopf.on.update("", "v1", "configmaps", when=lambda body, **_: body["metadata"]["name"] == "aws-auth")
 def check_config_map(logger, spec, old, new, diff, **kwargs):
-    logger.info(diff)
-    pass
+    if 'data' in old and 'data' in new:
+        old_mappings = AuthMappingList(data=old['data'])        
+        new_mappings = AuthMappingList(data=new['data'])
+        change = list(old_mappings.diff(new_mappings))
+        logger.info(f'Change to aws-auth configmap: {change}')
+    else:
+        logger.error(f'Wrong config map spec: {spec}')
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
     if os.getenv(USE_PROTECTED_MAPPING) == "true":

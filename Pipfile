@@ -15,6 +15,7 @@ pytest = "==5.3.4"
 pytest-mock = "==2.0.0"
 pytest-cov = "*"
 pytest-env = "*"
+dictdiffer = "*"
 
 [requires]
 python_version = "3.7"
