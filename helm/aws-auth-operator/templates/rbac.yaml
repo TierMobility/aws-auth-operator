@@ -19,8 +19,11 @@ rules:
     resourceNames: ["aws-auth"]
     verbs: ["*"]
   - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["list", "get", "watch"]
+  - apiGroups: [""]
     resources: ["events", "services", "pods", "namespaces","deployments"]
-    verbs: ["*"]
+    verbs: ["list", "get", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
