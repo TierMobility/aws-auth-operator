@@ -35,6 +35,19 @@ DATA_NOT_CONTAINED = {
     "groups": ["viewers", "editors"],
 }
 
+CM_DATA_1 = {
+    "rolearn": "arn:aws:iam::6666:role/test-role-1",
+    "username": "test-role-1",
+    "groups": ["viewers"],
+}
+
+CM_DATA_2 = {
+    "rolearn": "arn:aws:iam::6666:role/test-role-2",
+    "username": "test-role-2",
+    "groups": ["viewers", "editors"],
+}
+
+
 logger = logging.getLogger()
 
 
@@ -196,6 +209,9 @@ def test_create_overwrite_protected_mapping(mocker):
     aws_auth.write_config_map.assert_not_called()
     aws_auth.get_protected_mapping.assert_called_once()
 
+
+def test_log_config_map_change():
+    aws_auth.log_config_map_change(logger, {}, {'data': CM_DATA_1}, {'data': CM_DATA_2}, {})
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]
