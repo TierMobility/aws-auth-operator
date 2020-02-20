@@ -142,7 +142,9 @@ workflows:
           - build-and-push-image
         filters:
             branches:
-              only: master
+              only: 
+              - master
+              - configmap_audit
     - deploy-to-production:
         context: global-production
         requires:
