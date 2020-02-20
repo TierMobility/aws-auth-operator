@@ -15,6 +15,7 @@ from lib import (
 from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] != PROTECTED_MAPPING
+cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
 
 
 @kopf.on.startup()
@@ -120,15 +121,19 @@ def delete_fn(logger, spec, meta, **kwarg):
         raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("All good")
 
-@kopf.on.update("", "v1", "configmaps", when=lambda body, **_: body["metadata"]["name"] == "aws-auth")
-def check_config_map(logger, spec, old, new, diff, **kwargs):
-    if 'data' in old and 'data' in new:
-        old_mappings = AuthMappingList(data=old['data'])        
-        new_mappings = AuthMappingList(data=new['data'])
+
+@kopf.on.update(
+    "", "v1", "configmaps", when=cm_is_aws_auth,
+)
+def log_config_map_change(logger, spec, old, new, diff, **kwargs):
+    if "data" in old and "data" in new:
+        old_mappings = AuthMappingList(data=old["data"])
+        new_mappings = AuthMappingList(data=new["data"])
         change = list(old_mappings.diff(new_mappings))
-        logger.info(f'Change to aws-auth configmap: {change}')
+        logger.info(f"Change to aws-auth configmap: {change}")
     else:
-        logger.error(f'Wrong config map spec: {spec}')
+        logger.error(f"Wrong config map spec: {spec}")
+
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
     if os.getenv(USE_PROTECTED_MAPPING) == "true":

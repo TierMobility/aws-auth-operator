@@ -75,3 +75,34 @@ def test_get_values():
         "usertype" in value_dict[0]
         and value_dict[0]["usertype"] == DATA_DEFAULT["usertype"].name
     )
+
+
+def test_diff():
+    mapping1 = AuthMappingList([DATA_DEFAULT, DATA_CREATE])
+    mapping2 = AuthMappingList([DATA_CREATE])
+    test_diff = list(mapping1.diff(mapping2))
+    assert test_diff == [
+        ("change", ["mapRoles", 0, "username"], ("test-role-0", "test-role-1")),
+        (
+            "change",
+            ["mapRoles", 0, "rolearn"],
+            (
+                "arn:aws:iam::6666:role/test-role-0",
+                "arn:aws:iam::6666:role/test-role-1",
+            ),
+        ),
+        (
+            "remove",
+            "mapRoles",
+            [
+                (
+                    1,
+                    {
+                        "groups": ["viewers"],
+                        "rolearn": "arn:aws:iam::6666:role/test-role-1",
+                        "username": "test-role-1",
+                    },
+                )
+            ],
+        ),
+    ]
