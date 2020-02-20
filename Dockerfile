@@ -9,4 +9,4 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev \
     
 COPY . .
 
-CMD kopf run --standalone --liveness=http://0.0.0.0:$PORT/healthz ./aws_auth.py
+CMD kopf run --standalone --liveness=http://0.0.0.0:$PORT/healthz -n kube-system ./aws_auth.py
