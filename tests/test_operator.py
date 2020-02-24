@@ -59,6 +59,7 @@ def test_create(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
+    mocker.patch("aws_auth.write_last_handled_mapping")
     aws_auth.get_protected_mapping.return_value = {
         "spec": {"mappings": [DATA_NOT_CONTAINED]}
     }
@@ -86,6 +87,7 @@ def test_delete(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
+    mocker.patch("aws_auth.write_last_handled_mapping")
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     aws_auth.write_config_map.return_value = build_cm()
     message = aws_auth.delete_fn(
@@ -107,6 +109,7 @@ def test_update(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_config_map")
+    mocker.patch("aws_auth.write_last_handled_mapping")
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(default=DATA_UPDATE)
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
@@ -129,6 +132,7 @@ def test_create_failed(mocker):
         mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
+        mocker.patch("aws_auth.write_last_handled_mapping")
         aws_auth.get_config_map.return_value = build_cm()
         aws_auth.write_config_map.return_value = build_cm(default={})
         aws_auth.create_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
@@ -141,6 +145,7 @@ def test_update_failed(mocker):
         mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
+        mocker.patch("aws_auth.write_last_handled_mapping")
         aws_auth.get_config_map.return_value = build_cm()
         aws_auth.write_config_map.return_value = build_cm()
         old = {"spec": {"mappings": [DATA_DEFAULT]}}
@@ -155,6 +160,7 @@ def test_delete_failed(mocker):
         mocker.patch("aws_auth.get_protected_mapping")
         mocker.patch("aws_auth.get_config_map")
         mocker.patch("aws_auth.write_config_map")
+        mocker.patch("aws_auth.write_last_handled_mapping")
         aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
         aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
         aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, kwargs={})
@@ -209,9 +215,13 @@ def test_create_overwrite_protected_mapping(mocker):
     aws_auth.write_config_map.assert_not_called()
     aws_auth.get_protected_mapping.assert_called_once()
 
-# remove for now
-#def test_log_config_map_change():
-#    aws_auth.log_config_map_change(logger, {}, {'data': CM_DATA_1}, {'data': CM_DATA_2}, {})
+
+
+def test_log_config_map_change(mocker):
+    mocker.patch("aws_auth.get_last_handled_mapping")
+    aws_auth.get_last_handled_mapping.return_value = {"spec": {"mappings": [DATA_CREATE]}}
+    aws_auth.log_config_map_change(logger, {'data': CM_DATA_2})
+
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
     data = [default]
