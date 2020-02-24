@@ -18,7 +18,10 @@ rules:
     resources: ["configmaps"]
     verbs: ["*"]
   - apiGroups: [""]
-    resources: ["events", "services", "pods", "namespaces","deployments"]
+    resources: ["events"]
+    verbs: ["list", "get", "watch", "create"]
+  - apiGroups: [""]
+    resources: ["services", "pods", "namespaces","deployments"]
     verbs: ["list", "get", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
