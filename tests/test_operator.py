@@ -216,11 +216,12 @@ def test_create_overwrite_protected_mapping(mocker):
     aws_auth.get_protected_mapping.assert_called_once()
 
 
-
 def test_log_config_map_change(mocker):
     mocker.patch("aws_auth.get_last_handled_mapping")
-    aws_auth.get_last_handled_mapping.return_value = {"spec": {"mappings": [DATA_CREATE]}}
-    aws_auth.log_config_map_change(logger, {'data': CM_DATA_2})
+    aws_auth.get_last_handled_mapping.return_value = {
+        "spec": {"mappings": [DATA_CREATE]}
+    }
+    aws_auth.log_config_map_change(logger, {"data": CM_DATA_2})
 
 
 def build_cm(default=DATA_DEFAULT, extra_data=None):
