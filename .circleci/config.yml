@@ -1,8 +1,7 @@
 version: 2.1
 
 orbs:
-  awscli: circleci/aws-cli@0.1.6
-  aws-ecr: circleci/aws-ecr@4.0.1
+  aws-ecr: circleci/aws-ecr@6.7.0
 
 jobs:
   pytest:
@@ -23,7 +22,7 @@ jobs:
       REPOSITORY_NAME: 'tier/aws-auth-operator'
 
     docker:
-      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v2-latest
 
     working_directory: ~/repo
     steps:
@@ -33,37 +32,7 @@ jobs:
           region: AWS_DEFAULT_REGION
           create-repo: true
           repo: ${REPOSITORY_NAME}
-          tag: ${CIRCLE_SHA1:0:8}
-      # this build will essentially just tag the image that has already been built
-      - aws-ecr/build-and-push-image:
-          region: AWS_DEFAULT_REGION
-          repo: ${REPOSITORY_NAME}
-          tag: latest-${CIRCLE_BRANCH//\//-}
-      - run:
-          name: "Set ECR repo permissions to allow access from other AWS accounts"
-          command: >
-            aws ecr --region ${AWS_DEFAULT_REGION} set-repository-policy --repository-name ${REPOSITORY_NAME}
-            --policy-text '{
-                            "Version": "2008-10-17",
-                            "Statement": [
-                              {
-                                "Sid": "new statement",
-                                "Effect": "Allow",
-                                "Principal": {
-                                  "AWS": [
-                                    "arn:aws:iam::075108987694:root",
-                                    "arn:aws:iam::199745669981:root"
-                                  ]
-                                },
-                                "Action": [
-                                  "ecr:BatchCheckLayerAvailability",
-                                  "ecr:BatchGetImage",
-                                  "ecr:GetDownloadUrlForLayer",
-                                  "ecr:ListImages"
-                                ]
-                              }
-                            ]
-                          }'
+          tag: '${CIRCLE_SHA1:0:8},latest-${CIRCLE_BRANCH//\//-}'
       - run:
           name: "Set Repository name"
           command: |
@@ -80,12 +49,11 @@ jobs:
       ENVIRONMENT: 'stage'
 
     docker:
-    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v2-latest
 
     working_directory: ~/repo
 
     steps:
-    - awscli/configure
     - checkout
     - attach_workspace:
         at: /tmp/workspace
@@ -111,7 +79,6 @@ jobs:
     working_directory: ~/repo
 
     steps:
-    - awscli/configure
     - checkout
     - attach_workspace:
         at: /tmp/workspace
@@ -140,6 +107,11 @@ workflows:
         context: global-staging
         requires:
           - build-and-push-image
+        filters:
+            branches:
+              only: 
+              - master
+              - configmap_audit
     - deploy-to-production:
         context: global-production
         requires:

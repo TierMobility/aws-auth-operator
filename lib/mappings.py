@@ -2,6 +2,7 @@ from __future__ import annotations
 import yaml
 from enum import Enum
 from typing import List, Dict
+import dictdiffer
 
 
 class UserType(Enum):
@@ -159,3 +160,6 @@ class AuthMappingList:
         return (
             "failed" if any(elem in role_arns for elem in new_role_arns) else "success"
         )
+
+    def diff(self, other: AuthMappingList):
+        return dictdiffer.diff(self.get_data(), other.get_data())

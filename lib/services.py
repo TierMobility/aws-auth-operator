@@ -5,7 +5,7 @@ from kubernetes.client.rest import ApiException
 from kubernetes.client import V1ConfigMap
 from lib.constants import *
 from lib.crd import build_aws_auth_mapping
-from typing import Dict
+from typing import Dict, List
 
 
 def get_config_map() -> V1ConfigMap:
@@ -37,10 +37,30 @@ def update_config_map(auth_config_map: V1ConfigMap, data: Dict):
 
 
 def get_protected_mapping() -> Dict:
-    api_instance = kubernetes.client.CustomObjectsApi()
+    return get_mapping(PROTECTED_MAPPING)
+
+
+def write_protected_mapping(logger, mappings: Dict):
+    create_mapping(logger, PROTECTED_MAPPING, mappings)
+
+
+def get_last_handled_mapping() -> Dict:
+    return get_mapping(LAST_HANDLED_MAPPING)
+
+
+def write_last_handled_mapping(logger, mappings: List):
+    lm = get_mapping(LAST_HANDLED_MAPPING)
+    if lm is None:
+        create_mapping(logger, LAST_HANDLED_MAPPING, mappings)
+    else:
+        update_mapping(logger, LAST_HANDLED_MAPPING, mappings)
+
+
+def get_mapping(name: str) -> Dict:
+    api_instance = get_custom_object_api() 
     try:
         protected_mapping = api_instance.get_cluster_custom_object(
-            CRD_GROUP, CRD_VERSION, CRD_NAME, PROTECTED_MAPPING
+            CRD_GROUP, CRD_VERSION, CRD_NAME, name
         )
         return protected_mapping
     except ApiException as e:
@@ -50,9 +70,9 @@ def get_protected_mapping() -> Dict:
             raise Exception("Getting resource failed!", e)
 
 
-def write_protected_mapping(logger, mappings: Dict):
-    body = build_aws_auth_mapping(mappings)
-    api_instance = kubernetes.client.CustomObjectsApi()
+def create_mapping(logger, name: str, mappings: Dict):
+    body = build_aws_auth_mapping(mappings, name)
+    api_instance = get_custom_object_api()
     try:
         pm = api_instance.create_cluster_custom_object(
             CRD_GROUP, CRD_VERSION, CRD_NAME, body, pretty=True
@@ -60,3 +80,18 @@ def write_protected_mapping(logger, mappings: Dict):
         print(pm)
     except ApiException as e:
         logger.error(e)
+
+
+def update_mapping(logger, name: str, mappings: Dict):
+    body = build_aws_auth_mapping(mappings, name)
+    api_instance = get_custom_object_api()
+    try:
+        pm = api_instance.patch_cluster_custom_object(
+            CRD_GROUP, CRD_VERSION, CRD_NAME, name, body
+        )
+        print(pm)
+    except ApiException as e:
+        logger.error(e)
+
+def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
+    return kubernetes.client.CustomObjectsApi()
