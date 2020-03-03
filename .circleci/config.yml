@@ -32,7 +32,7 @@ jobs:
           region: AWS_DEFAULT_REGION
           create-repo: true
           repo: ${REPOSITORY_NAME}
-          tag: "${CIRCLE_SHA1:0:8},latest-${CIRCLE_BRANCH//\//-}"
+          tag: '${CIRCLE_SHA1:0:8},latest-${CIRCLE_BRANCH//\//-}'
       - run:
           name: "Set Repository name"
           command: |
