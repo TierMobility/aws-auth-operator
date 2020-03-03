@@ -6,8 +6,6 @@ releases:
     wait: true
     timeout: 120
     values:
-      - environments/{{ env "ENVIRONMENT" | default "ops" }}/values.yaml
-      - environment: {{ env "ENVIRONMENT" | default "ops" | quote }}
       - image:
           tag: '{{ env "IMAGE_TAG" | default "latest-master" }}'
           repository: '{{ env "ECR_REPOSITORY_URL" }}'
