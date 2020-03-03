@@ -1,4 +1,0 @@
-env:
-  variables:
-    data:
-      USE_PROTECTED_MAPPING: true
