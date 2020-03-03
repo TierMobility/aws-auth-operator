@@ -10,11 +10,15 @@ from lib import (
     update_config_map,
     write_config_map,
     write_protected_mapping,
+    write_last_handled_mapping,
+    get_last_handled_mapping,
     get_result_message,
 )
 from lib.constants import *
 
-check_not_protected = lambda body, **_: body["metadata"]["name"] != PROTECTED_MAPPING
+check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_MAPPINGS
+cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
+kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 
 @kopf.on.startup()
@@ -42,6 +46,8 @@ def create_fn(logger, spec, meta, **kwargs):
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
+        # save current config before change
+        write_last_handled_mapping(logger, current_config_mapping.get_values())
         # add new roles
         current_config_mapping.merge_mappings(mappings_new)
         auth_config_map = update_config_map(
@@ -51,8 +57,6 @@ def create_fn(logger, spec, meta, **kwargs):
         response_data = AuthMappingList(data=response.data)
         if mappings_new not in response_data:
             raise kopf.PermanentError("Add Roles failed")
-        else:
-            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("All good")
@@ -76,6 +80,9 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
+        # save current config before change
+        write_last_handled_mapping(logger, current_config_mapping.get_values())
+
         # remove old stuff first
         current_config_mapping.remove_mappings(old_role_mappings)
         # add new values
@@ -87,8 +94,6 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
         response_data = AuthMappingList(data=response.data)
         if len(new_role_mappings) > 0 and new_role_mappings not in response_data:
             raise kopf.PermanentError("Update Roles failed")
-        else:
-            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("All good")
@@ -105,6 +110,9 @@ def delete_fn(logger, spec, meta, **kwarg):
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
+
+        # save current config before change
+        write_last_handled_mapping(logger, current_config_mapping.get_values())
         # remove old roles
         current_config_mapping.remove_mappings(mappings_delete)
         auth_config_map = update_config_map(
@@ -114,11 +122,23 @@ def delete_fn(logger, spec, meta, **kwarg):
         response_data = AuthMappingList(data=response.data)
         if mappings_delete in response_data:
             raise kopf.PermanentError("Delete Roles failed")
-        else:
-            logger.info(response.data)
     except ApiException as e:
         raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("All good")
+
+
+@kopf.on.event(
+    "", "v1", "configmaps", when=cm_is_aws_auth,
+)
+def log_config_map_change(logger, body, **kwargs):
+    lm = get_last_handled_mapping()
+    if lm is not None:
+        old_mappings = AuthMappingList(lm["spec"]["mappings"])
+        new_mappings = AuthMappingList(data=body["data"])
+        change = list(old_mappings.diff(new_mappings))
+        logger.info(f"Change to aws-auth configmap: {change}")
+    else:
+        logger.error(f"last mapping not found: {body}")
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
