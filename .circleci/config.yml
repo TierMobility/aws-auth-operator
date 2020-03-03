@@ -23,7 +23,7 @@ jobs:
       REPOSITORY_NAME: 'tier/aws-auth-operator'
 
     docker:
-      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:latest
+      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v2-latest
 
     working_directory: ~/repo
     steps:
@@ -39,31 +39,6 @@ jobs:
           region: AWS_DEFAULT_REGION
           repo: ${REPOSITORY_NAME}
           tag: latest-${CIRCLE_BRANCH//\//-}
-      - run:
-          name: "Set ECR repo permissions to allow access from other AWS accounts"
-          command: >
-            aws ecr --region ${AWS_DEFAULT_REGION} set-repository-policy --repository-name ${REPOSITORY_NAME}
-            --policy-text '{
-                            "Version": "2008-10-17",
-                            "Statement": [
-                              {
-                                "Sid": "new statement",
-                                "Effect": "Allow",
-                                "Principal": {
-                                  "AWS": [
-                                    "arn:aws:iam::075108987694:root",
-                                    "arn:aws:iam::199745669981:root"
-                                  ]
-                                },
-                                "Action": [
-                                  "ecr:BatchCheckLayerAvailability",
-                                  "ecr:BatchGetImage",
-                                  "ecr:GetDownloadUrlForLayer",
-                                  "ecr:ListImages"
-                                ]
-                              }
-                            ]
-                          }'
       - run:
           name: "Set Repository name"
           command: |
