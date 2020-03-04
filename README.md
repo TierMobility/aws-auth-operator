@@ -2,6 +2,10 @@
 
 based on Kopf: https://kopf.readthedocs.io/en/latest/
 
+# Backgound Information
+
+AWS Auth - https://docs.aws.amazon.com/eks/latest/userguide/add-user-role.html
+
 # installation
 
 - install minikube
