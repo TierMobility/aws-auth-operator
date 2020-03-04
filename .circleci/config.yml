@@ -1,0 +1,123 @@
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@6.7.0
+
+jobs:
+  pytest:
+    docker:
+      - image: circleci/python:3.7-stretch
+    environment:
+      ENVIRONMENT: test
+    steps:
+      - checkout
+      - run: pip install pipenv
+      - run: pipenv install 
+      - run: pipenv run pytest tests
+
+  build-and-push-image:
+    description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
+
+    environment:
+      REPOSITORY_NAME: 'tier/aws-auth-operator'
+
+    docker:
+      - image: tiermobility/buildtools:v2-latest
+
+    working_directory: ~/repo
+    steps:
+      - setup_remote_docker:  # required for running docker commands, creates a remote environment
+          docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
+      - aws-ecr/build-and-push-image:
+          region: AWS_DEFAULT_REGION
+          create-repo: true
+          repo: ${REPOSITORY_NAME}
+          tag: '${CIRCLE_SHA1:0:8},latest-${CIRCLE_BRANCH//\//-}'
+      - run:
+          name: "Set Repository name"
+          command: |
+            mkdir -p artifacts
+            ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL:-$(aws ecr describe-repositories --query "repositories[*].repositoryUri" --output text --repository-names ${REPOSITORY_NAME})}
+            echo $ECR_REPOSITORY_URL > artifacts/repository_url
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+
+  deploy-to-stage:
+    environment:
+      ENVIRONMENT: 'stage'
+
+    docker:
+    - image: tiermobility/buildtools:v2-latest
+
+    working_directory: ~/repo
+
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - run:
+        name: source_environment
+        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
+    - run:
+        name: "Deploy"
+        command: |
+          aws --region eu-central-1 eks update-kubeconfig --name ${CLUSTER_NAME_STAGING}
+          kubectl cluster-info
+          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
+          cd helm && helmfile --log-level debug sync && cd ..
+
+
+  deploy-to-production:
+    environment:
+      ENVIRONMENT: 'production'
+
+    docker:
+    - image: tiermobility/buildtools:v2-latest
+
+    working_directory: ~/repo
+
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - run:
+        name: source_environment
+        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
+    - run:
+        name: Deploy
+        working_directory: ~/repo
+        command: |
+          aws --region eu-central-1 eks update-kubeconfig --name ${CLUSTER_NAME_PRODUCTION}
+          kubectl cluster-info
+          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
+          cd helm && helmfile --log-level debug sync && cd ..
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+    - pytest
+    - build-and-push-image:
+        context: global-production
+        requires: 
+          - pytest
+    - deploy-to-stage:
+        context: global-staging
+        requires:
+          - build-and-push-image
+        filters:
+            branches:
+              only: 
+              - master
+              - configmap_audit
+    - deploy-to-production:
+        context: global-production
+        requires:
+          - deploy-to-stage
+        filters:
+            branches:
+              only: master
+
+
