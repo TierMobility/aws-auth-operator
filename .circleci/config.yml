@@ -18,9 +18,6 @@ jobs:
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
 
-    environment:
-      REPOSITORY_NAME: 'tier/aws-auth-operator'
-
     docker:
       - image: tiermobility/buildtools:v2-latest
 
@@ -63,7 +60,7 @@ jobs:
     - run:
         name: "Deploy"
         command: |
-          aws --region eu-central-1 eks update-kubeconfig --name ${CLUSTER_NAME_STAGING}
+          aws --region ${REGION} eks update-kubeconfig --name ${CLUSTER_NAME_STAGING}
           kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
           cd helm && helmfile --log-level debug sync && cd ..
@@ -89,7 +86,7 @@ jobs:
         name: Deploy
         working_directory: ~/repo
         command: |
-          aws --region eu-central-1 eks update-kubeconfig --name ${CLUSTER_NAME_PRODUCTION}
+          aws --region ${REGION} eks update-kubeconfig --name ${CLUSTER_NAME_PRODUCTION}
           kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
           cd helm && helmfile --log-level debug sync && cd ..
@@ -111,7 +108,6 @@ workflows:
             branches:
               only: 
               - master
-              - configmap_audit
     - deploy-to-production:
         context: global-production
         requires:
