@@ -1,6 +1,6 @@
 # aws-auth-operator
 
-Customized User/Role Mapping from Aws to EKS
+Customized User/Role mapping from AWS to EKS
 
 based on Kopf: https://kopf.readthedocs.io/en/latest/
 
@@ -9,7 +9,9 @@ based on Kopf: https://kopf.readthedocs.io/en/latest/
 Maps a custom resource definition to an entry in the aws-auth configmap
 described here: https://docs.aws.amazon.com/eks/latest/userguide/add-user-role.html
 
-Also logs the changes to the aws-auth configmap to stdout
+Also logs the changes to the aws-auth configmap to stdout.
+
+An example crd is in the example folder.
 
 # installation
 
