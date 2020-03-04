@@ -2,7 +2,7 @@
 
 based on Kopf: https://kopf.readthedocs.io/en/latest/
 
-# backgound Information
+# backgound information
 
 AWS Auth - https://docs.aws.amazon.com/eks/latest/userguide/add-user-role.html
 
