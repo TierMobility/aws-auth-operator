@@ -57,7 +57,7 @@ def write_last_handled_mapping(logger, mappings: List):
 
 
 def get_mapping(name: str) -> Dict:
-    api_instance = get_custom_object_api() 
+    api_instance = get_custom_object_api()
     try:
         protected_mapping = api_instance.get_cluster_custom_object(
             CRD_GROUP, CRD_VERSION, CRD_NAME, name
@@ -92,6 +92,7 @@ def update_mapping(logger, name: str, mappings: Dict):
         print(pm)
     except ApiException as e:
         logger.error(e)
+
 
 def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
     return kubernetes.client.CustomObjectsApi()
