@@ -42,7 +42,7 @@ rsa==4.0
 six==1.14.0
 typed-ast==1.4.1
 typing-extensions==3.7.4.1
-urllib3==1.25.8
+urllib3==1.26.5
 wcwidth==0.1.8
 websocket-client==0.57.0
 wrapt==1.11.2
