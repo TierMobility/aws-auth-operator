@@ -18,7 +18,7 @@ from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_MAPPINGS
 cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
-kopf.config.WatchersConfig.watcher_retry_delay = 1
+# kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 
 @kopf.on.startup()
