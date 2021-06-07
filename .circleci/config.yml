@@ -12,7 +12,7 @@ jobs:
     steps:
       - checkout
       - run: pip install pipenv
-      - run: pipenv install 
+      - run: pipenv install -d
       - run: pipenv run pytest tests
 
   build-and-push-image:
