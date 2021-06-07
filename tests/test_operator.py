@@ -193,7 +193,7 @@ def test_startup(mocker):
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_protected_mapping")
     aws_auth.get_protected_mapping.return_value = None
-    aws_auth.startup(logger)
+    aws_auth.startup(logger, settings={})
     aws_auth.get_protected_mapping.assert_called_once()
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_protected_mapping.assert_called_once()
