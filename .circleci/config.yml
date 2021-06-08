@@ -109,6 +109,7 @@ workflows:
             branches:
               only: 
               - master
+              - update_deps
     - deploy-to-production:
         context: global-production
         requires:
