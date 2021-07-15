@@ -62,7 +62,7 @@ jobs:
         name: "Deploy"
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS = ( ${STAGING_CLUSTERS} ) 
+          CLUSTERS=( ${STAGING_CLUSTERS} ) 
           for cluster in ${STAGING_CLUSTERS[@]}; do
             aws --region ${REGION} eks update-kubeconfig --name ${cluster}
             kubectl cluster-info
@@ -91,7 +91,7 @@ jobs:
         working_directory: ~/repo
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS = ( ${PRODUCTION_CLUSTERS} ) 
+          CLUSTERS=( ${PRODUCTION_CLUSTERS} ) 
           for cluster in ${PRODUCTION_CLUSTERS[@]}; do
             aws --region ${REGION} eks update-kubeconfig --name ${cluster}
             kubectl cluster-info
