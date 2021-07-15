@@ -61,10 +61,13 @@ jobs:
     - run:
         name: "Deploy"
         command: |
-          aws --region ${REGION} eks update-kubeconfig --name ${CLUSTER_NAME_STAGING}
-          kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          cd helm && helmfile --log-level debug sync && cd ..
+          CLUSTERS = ( ${STAGING_CLUSTERS} ) 
+          for cluster in ${STAGING_CLUSTERS[@]}; do
+            aws --region ${REGION} eks update-kubeconfig --name ${cluster}
+            kubectl cluster-info
+            cd helm && helmfile --log-level debug sync && cd ..
+          done
 
 
   deploy-to-production:
@@ -87,10 +90,13 @@ jobs:
         name: Deploy
         working_directory: ~/repo
         command: |
-          aws --region ${REGION} eks update-kubeconfig --name ${CLUSTER_NAME_PRODUCTION}
-          kubectl cluster-info
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          cd helm && helmfile --log-level debug sync && cd ..
+          CLUSTERS = ( ${PRODUCTION_CLUSTERS} ) 
+          for cluster in ${PRODUCTION_CLUSTERS[@]}; do
+            aws --region ${REGION} eks update-kubeconfig --name ${cluster}
+            kubectl cluster-info
+            cd helm && helmfile --log-level debug sync && cd ..
+          done
 
 workflows:
   version: 2
@@ -117,5 +123,3 @@ workflows:
         filters:
             branches:
               only: master
-
-
