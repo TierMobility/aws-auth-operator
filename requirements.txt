@@ -41,7 +41,7 @@ rope==0.16.0
 rsa==4.7.2
 six==1.16.0
 typed-ast==1.4.3
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
 urllib3==1.26.5
 wcwidth==0.2.5
 websocket-client==1.0.1
