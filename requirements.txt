@@ -1,6 +1,6 @@
 aiohttp==3.7.4.post0
 aiojobs==0.3.0
-astroid==2.3.3
+astroid==2.11.5
 async-timeout==3.0.1
 attrs==21.2.0
 cachetools==4.2.2
