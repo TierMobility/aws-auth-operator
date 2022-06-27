@@ -104,7 +104,9 @@ workflows:
     jobs:
     - pytest
     - build-and-push-image:
-        context: global-production
+        context:
+          - global-production
+          - docker
         requires: 
           - pytest
     - deploy-to-stage:
