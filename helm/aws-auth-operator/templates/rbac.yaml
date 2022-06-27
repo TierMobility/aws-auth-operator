@@ -7,6 +7,8 @@ metadata:
     chart: {{ template "aws-auth-operator.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
 rules:
   - apiGroups: ["tier.app"]
     resources: ["awsauthmappings"]
@@ -33,6 +35,8 @@ metadata:
     chart: {{ template "aws-auth-operator.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
