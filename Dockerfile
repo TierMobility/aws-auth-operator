@@ -11,4 +11,4 @@ COPY . .
 
 RUN addgroup -S app && adduser -S -G app app 
 USER app
-CMD kopf run --standalone --liveness=http://0.0.0.0:$PORT/healthz -n kube-system ./aws_auth.py
+CMD kopf run --standalone --log-format=json --liveness=http://0.0.0.0:$PORT/healthz -n kube-system ./aws_auth.py
