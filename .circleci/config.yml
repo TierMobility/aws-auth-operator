@@ -1,7 +1,12 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@6.7.0
+  aws-ecr: circleci/aws-ecr@7.3.0
+
+executors:
+  build-tools:
+    docker:
+      - image: ${AWS_ECR_ACCOUNT_URL}/tier/buildtools:v3-latest
 
 jobs:
   pytest:
@@ -19,11 +24,11 @@ jobs:
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
 
-    docker:
-      - image: tiermobility/buildtools:v2-latest
+    executor: build-tools
 
     working_directory: ~/repo
     steps:
+      - checkout
       - setup_remote_docker:  # required for running docker commands, creates a remote environment
           docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
       - aws-ecr/build-and-push-image:
@@ -46,38 +51,7 @@ jobs:
     environment:
       ENVIRONMENT: 'stage'
 
-    docker:
-    - image: tiermobility/buildtools:v2-latest
-
-    working_directory: ~/repo
-
-    steps:
-    - checkout
-    - attach_workspace:
-        at: /tmp/workspace
-    - run:
-        name: source_environment
-        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
-    - run:
-        name: "Deploy"
-        command: |
-          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS=( ${STAGING_CLUSTERS} ) 
-          for cluster in ${STAGING_CLUSTERS[@]}; do
-            aws --region ${REGION} eks update-kubeconfig --name ${cluster}
-            kubectl cluster-info
-            cd helm && helmfile --log-level debug sync && cd ..
-          done
-
-
-  deploy-to-production:
-    environment:
-      ENVIRONMENT: 'production'
-
-    docker:
-    - image: tiermobility/buildtools:v2-latest
-
-    working_directory: ~/repo
+    executor: build-tools
 
     steps:
     - checkout
@@ -88,14 +62,42 @@ jobs:
         command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
         name: Deploy
-        working_directory: ~/repo
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS=( ${PRODUCTION_CLUSTERS} ) 
+          CLUSTERS=( ${STAGING_CLUSTERS} ) 
+          export CLONED_FOLDER=$PWD
+          for cluster in ${STAGING_CLUSTERS[@]}; do
+            aws --region ${REGION} eks update-kubeconfig --name ${cluster}
+            kubectl cluster-info
+            cd helm && helmfile --log-level debug sync
+            cd $CLONED_FOLDER
+          done
+
+
+  deploy-to-production:
+    environment:
+      ENVIRONMENT: 'production'
+
+    executor: build-tools
+
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - run:
+        name: source_environment
+        command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
+    - run:
+        name: Deploy
+        command: |
+          export IMAGE_TAG=${CIRCLE_SHA1:0:8}
+          CLUSTERS=( ${PRODUCTION_CLUSTERS} )
+          export CLONED_FOLDER=$PWD
           for cluster in ${PRODUCTION_CLUSTERS[@]}; do
             aws --region ${REGION} eks update-kubeconfig --name ${cluster}
             kubectl cluster-info
-            cd helm && helmfile --log-level debug sync && cd ..
+            cd helm && helmfile --log-level debug sync
+            cd $CLONED_FOLDER
           done
 
 workflows:
@@ -104,7 +106,9 @@ workflows:
     jobs:
     - pytest
     - build-and-push-image:
-        context: global-production
+        context:
+          - global-production
+          - dockerhub
         requires: 
           - pytest
     - deploy-to-stage:
