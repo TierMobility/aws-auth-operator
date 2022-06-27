@@ -20,7 +20,7 @@ jobs:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
 
     docker:
-      - image: tiermobility/buildtools:v3-latest
+      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
 
     working_directory: ~/repo
     steps:
@@ -47,7 +47,7 @@ jobs:
       ENVIRONMENT: 'stage'
 
     docker:
-    - image: tiermobility/buildtools:v3-latest
+    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
 
     working_directory: ~/repo
 
@@ -75,7 +75,7 @@ jobs:
       ENVIRONMENT: 'production'
 
     docker:
-    - image: tiermobility/buildtools:v3-latest
+    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
 
     working_directory: ~/repo
 
