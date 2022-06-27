@@ -53,8 +53,6 @@ jobs:
 
     executor: build-tools
 
-    working_directory: ~/repo
-
     steps:
     - checkout
     - attach_workspace:
@@ -63,14 +61,22 @@ jobs:
         name: source_environment
         command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
-        name: "Deploy"
+        name: DEBUG
+        command: |
+          id
+          pwd
+          ls -la .
+    - run:
+        name: Deploy
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS=( ${STAGING_CLUSTERS} ) 
-          for cluster in ${STAGING_CLUSTERS[@]}; do
+          CLUSTERS=( ${PRODUCTION_CLUSTERS} )
+          export CLONED_FOLDER=$PWD
+          for cluster in ${PRODUCTION_CLUSTERS[@]}; do
             aws --region ${REGION} eks update-kubeconfig --name ${cluster}
             kubectl cluster-info
-            cd helm && helmfile --log-level debug sync && cd ..
+            cd helm && helmfile --log-level debug sync
+            cd $CLONED_FOLDER
           done
 
 
