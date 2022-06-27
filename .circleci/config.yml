@@ -94,11 +94,13 @@ jobs:
         working_directory: ~/repo
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
-          CLUSTERS=( ${PRODUCTION_CLUSTERS} ) 
+          CLUSTERS=( ${PRODUCTION_CLUSTERS} )
+          export CLONED_FOLDER=$PWD
           for cluster in ${PRODUCTION_CLUSTERS[@]}; do
             aws --region ${REGION} eks update-kubeconfig --name ${cluster}
             kubectl cluster-info
-            cd helm && helmfile --log-level debug sync && cd ..
+            cd helm && helmfile --log-level debug sync
+            cd $CLONED_FOLDER
           done
 
 workflows:
@@ -121,6 +123,7 @@ workflows:
               only: 
               - master
               - update_deps
+              - CI-2368-fix-deployment
     - deploy-to-production:
         context: global-production
         requires:
