@@ -1,7 +1,12 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@8.1.2
+  aws-ecr: circleci/aws-ecr@7.3.0
+
+executors:
+  build-tools:
+    docker:
+      - image: ${AWS_ECR_ACCOUNT_URL}/tier/buildtools:v3-latest
 
 jobs:
   pytest:
@@ -19,13 +24,13 @@ jobs:
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
 
-    docker:
-      - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
+    executor: build-tools
 
     working_directory: ~/repo
     steps:
-      - setup_remote_docker:  # required for running docker commands, creates a remote environment
-          docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
+      # - setup_remote_docker:  # required for running docker commands, creates a remote environment
+      #     docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
+
       - aws-ecr/build-and-push-image:
           region: AWS_DEFAULT_REGION
           create-repo: true
@@ -46,8 +51,7 @@ jobs:
     environment:
       ENVIRONMENT: 'stage'
 
-    docker:
-    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
+    executor: build-tools
 
     working_directory: ~/repo
 
@@ -74,8 +78,7 @@ jobs:
     environment:
       ENVIRONMENT: 'production'
 
-    docker:
-    - image: 373437620866.dkr.ecr.eu-central-1.amazonaws.com/tier/buildtools:v3-latest
+    executor: build-tools
 
     working_directory: ~/repo
 
@@ -106,7 +109,7 @@ workflows:
     - build-and-push-image:
         context:
           - global-production
-          - docker
+          - dockerhub
         requires: 
           - pytest
     - deploy-to-stage:
