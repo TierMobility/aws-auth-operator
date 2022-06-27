@@ -61,12 +61,6 @@ jobs:
         name: source_environment
         command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
-        name: DEBUG
-        command: |
-          id
-          pwd
-          ls -la .
-    - run:
         name: Deploy
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
@@ -93,12 +87,6 @@ jobs:
     - run:
         name: source_environment
         command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
-    - run:
-        name: DEBUG
-        command: |
-          id
-          pwd
-          ls -la .
     - run:
         name: Deploy
         command: |
