@@ -121,7 +121,6 @@ workflows:
               only: 
               - master
               - update_deps
-              - CI-2368-fix-deployment
     - deploy-to-production:
         context: global-production
         requires:
