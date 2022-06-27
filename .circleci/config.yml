@@ -28,9 +28,9 @@ jobs:
 
     working_directory: ~/repo
     steps:
-      # - setup_remote_docker:  # required for running docker commands, creates a remote environment
-      #     docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
-
+      - checkout
+      - setup_remote_docker:  # required for running docker commands, creates a remote environment
+          docker_layer_caching: true # enable caching of docker layers from previous builds to speed up image creation
       - aws-ecr/build-and-push-image:
           region: AWS_DEFAULT_REGION
           create-repo: true
