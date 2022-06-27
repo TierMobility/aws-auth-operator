@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: {{ template "aws-auth-operator.fullname" . }}
@@ -26,7 +26,7 @@ rules:
     resources: ["services", "pods", "namespaces","deployments"]
     verbs: ["list", "get", "watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: {{ template "aws-auth-operator.fullname" . }}
