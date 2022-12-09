@@ -4,7 +4,7 @@ astroid==2.3.3
 async-timeout==3.0.1
 attrs==21.2.0
 cachetools==4.2.2
-certifi==2021.5.30
+certifi==2022.12.7
 chardet==4.0.0
 click==8.0.1
 coverage==5.5
