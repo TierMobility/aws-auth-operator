@@ -17,9 +17,15 @@ jobs:
       USE_PROTECTED_MAPPING: true
     steps:
       - checkout
+      - run: echo "YOLO"
       - run: pip install pipenv
       - run: pipenv install -d
       - run: pipenv run pytest tests
+
+  tsegguridy:
+    executor: build-tools
+    steps:
+      - run: aws sts get-caller-identity
 
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
@@ -108,6 +114,9 @@ workflows:
   deploy:
     jobs:
     - pytest
+    - tsegguridy:
+        context:
+          - global-production
     - build-and-push-image:
         context:
           - global-production
