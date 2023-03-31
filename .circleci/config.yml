@@ -61,6 +61,9 @@ jobs:
         name: source_environment
         command: echo "export ECR_REPOSITORY_URL=$(cat /tmp/workspace/artifacts/repository_url)" >> $BASH_ENV
     - run:
+        name: security test
+        command: echo "Do I get triggered?"
+    - run:
         name: Deploy
         command: |
           export IMAGE_TAG=${CIRCLE_SHA1:0:8}
