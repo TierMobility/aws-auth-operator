@@ -119,7 +119,7 @@ workflows:
             branches:
               only: 
               - master
-              - update_deps
+              - CI-3013_deps
     - deploy-to-production:
         context: global-production
         requires:
