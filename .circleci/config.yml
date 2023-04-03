@@ -118,8 +118,7 @@ workflows:
         filters:
             branches:
               only: 
-              - master
-              - CI-3013_deps
+              - master             
     - deploy-to-production:
         context: global-production
         requires:
