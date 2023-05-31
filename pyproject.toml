@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "aws_auth_operator"}]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.10"
 kopf = "^1.36.1"
 kubernetes = "^26.1.0"
 pyyaml = "^6.0"
