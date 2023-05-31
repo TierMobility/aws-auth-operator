@@ -17,8 +17,8 @@ jobs:
       USE_PROTECTED_MAPPING: true
     steps:
       - checkout
-      - run: poetry install -v
-      - run: poetry run pytest tests
+      - run: pip install -r requirements.txt
+      - run: pytest tests
 
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
