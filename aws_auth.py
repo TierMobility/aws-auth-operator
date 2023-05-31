@@ -71,6 +71,7 @@ def create_fn(logger, spec, meta, **kwargs):
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
+    event_queue.put("Updating configmap ...")
     if not new or "spec" not in new:
         return get_result_message(f"invalid schema {new}")
     if "mappings" not in new["spec"]:
