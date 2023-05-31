@@ -4,7 +4,6 @@ version = "0.1.0"
 description = ""
 authors = ["Daniel Hahn <daniel.hahn@tier.app>"]
 readme = "README.md"
-packages = [{include = "aws_auth_operator"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
