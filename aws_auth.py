@@ -152,8 +152,8 @@ def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_)
     started = time.time()
     while not stopped and time.time() - started <= 30:
         logger.info(f"Something")        
-        if not queue.empty():
-            print(queue.get())
+        if not event_queue.empty():
+            print(event_queue.get())
         stopped.wait(5.0)
 
     print("We are done. Bye.")
