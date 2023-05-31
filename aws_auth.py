@@ -20,7 +20,7 @@ from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_MAPPINGS
 cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
-last_handled_filter = lambda body, **_: body["metadata"]["name"] == "aws-auth-last-handled"
+last_handled_filter = lambda name, **_: name == "aws-auth-last-handled"
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 event_queue = queue.Queue()
