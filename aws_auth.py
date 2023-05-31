@@ -150,8 +150,7 @@ def log_config_map_change(logger, body, **kwargs):
 
 @kopf.daemon(CRD_GROUP, CRD_VERSION, CRD_NAME, when=last_handled_filter)
 def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
-    while not stopped:
-        logger.info(f"Something")        
+    while not stopped:   
         if not event_queue.empty():
             logger.info(event_queue.get())
         stopped.wait(5.0)
