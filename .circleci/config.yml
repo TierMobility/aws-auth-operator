@@ -118,8 +118,7 @@ workflows:
         filters:
             branches:
               only: 
-              - master
-              - update_deps
+              - master           
     - deploy-to-production:
         context: global-production
         requires:
