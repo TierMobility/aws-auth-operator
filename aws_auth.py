@@ -21,7 +21,7 @@ check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_M
 cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
-event_queue = queue.Queue()
+#event_queue = queue.Queue()
 
 @kopf.on.startup()
 def startup(logger, settings: kopf.OperatorSettings, **kwargs):
@@ -37,7 +37,7 @@ def startup(logger, settings: kopf.OperatorSettings, **kwargs):
             logger.info(role_mappings)
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
-    event_queue.put("Starting Operator ...")
+    #event_queue.put("Starting Operator ...")
 
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -145,14 +145,14 @@ def log_config_map_change(logger, body, **kwargs):
     else:
         logger.error(f"last mapping not found: {body}")
 
-@kopf.daemon('changehandler')
+@kopf.on.daemon('changehandler')
 def changehandler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
     print("start")
     started = time.time()
     while not stopped and time.time() - started <= 30:
         logger.info(f"=> Ping from a sync daemon: field={spec['field']!r}, retry={retry}")        
-        if not queue.empty():
-            print(queue.get())
+        # if not queue.empty():
+        #     print(queue.get())
         stopped.wait(5.0)
 
     print("We are done. Bye.")
