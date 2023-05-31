@@ -145,7 +145,7 @@ def log_config_map_change(logger, body, **kwargs):
     else:
         logger.error(f"last mapping not found: {body}")
 
-@kopf.on.daemon('changehandler')
+@kopf.daemon(CRD_GROUP)
 def changehandler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
     print("start")
     started = time.time()
