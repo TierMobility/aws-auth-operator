@@ -145,12 +145,15 @@ def log_config_map_change(logger, body, **kwargs):
     else:
         logger.error(f"last mapping not found: {body}")
 
-@kopf.daemon('event_handler')
-def handle_event(stopped, **kwargs):
-    while not stopped:
-        time.sleep(1.0)
+@kopf.daemon('changehandler')
+def changehandler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
+    print("start")
+    started = time.time()
+    while not stopped and time.time() - started <= 30:
+        logger.info(f"=> Ping from a sync daemon: field={spec['field']!r}, retry={retry}")        
         if not queue.empty():
             print(queue.get())
+        stopped.wait(5.0)
 
     print("We are done. Bye.")
 
