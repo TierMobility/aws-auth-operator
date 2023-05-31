@@ -11,7 +11,7 @@ executors:
 jobs:
   pytest:
     docker:
-      - image: circleci/python:3.10-slim
+      - image: cimg/python:3.10
     environment:
       ENVIRONMENT: test
       USE_PROTECTED_MAPPING: true
