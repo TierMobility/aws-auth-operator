@@ -90,6 +90,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
 
     if overwrites_protected_mapping(logger, new_role_mappings):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
+    event_queue.put(Event(event_type=EventType.UPDATE, mappings=mappings_new, old_mappings=old_role_mappings))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -120,6 +121,7 @@ def delete_fn(logger, spec, meta, **kwarg):
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
+    event_queue.put(Event(event_type=EventType.DELETE, mappings=mappings_delete))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
