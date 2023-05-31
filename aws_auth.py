@@ -151,7 +151,7 @@ def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_)
     print("start")
     started = time.time()
     while not stopped and time.time() - started <= 30:
-        logger.info(f"=> Ping from a sync daemon: field={spec['field']!r}, retry={retry}")        
+        logger.info(f"Something")        
         if not queue.empty():
             print(queue.get())
         stopped.wait(5.0)
