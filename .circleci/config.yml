@@ -17,9 +17,8 @@ jobs:
       USE_PROTECTED_MAPPING: true
     steps:
       - checkout
-      - run: pip install pipenv
-      - run: pipenv install -d
-      - run: pipenv run pytest tests
+      - run: poetry install 
+      - run: poetry run pytest tests
 
   build-and-push-image:
     description: "Build and push image to ECR. Tagged as latest-<branch_name> and with <git_commit_hash>"
