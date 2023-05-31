@@ -15,20 +15,25 @@ from lib import (
     write_last_handled_mapping,
     get_last_handled_mapping,
     get_result_message,
+    Event,
+    EventType,
 )
 from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_MAPPINGS
 cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
-last_handled_filter = lambda body, **_: body["metadata"]["name"] == "aws-auth-last-handled"
+last_handled_filter = (
+    lambda body, **_: body["metadata"]["name"] == "aws-auth-last-handled"
+)
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 event_queue = queue.Queue()
 
+
 @kopf.on.startup()
 def startup(logger, settings: kopf.OperatorSettings, **kwargs):
     # set api watching delay to 1s
-    settings.watching.reconnect_backoff = 1 
+    settings.watching.reconnect_backoff = 1
     if os.getenv(USE_PROTECTED_MAPPING) == "true":
         kopf.login_via_client(logger=logger, **kwargs)
         pm = get_protected_mapping()
@@ -50,6 +55,7 @@ def create_fn(logger, spec, meta, **kwargs):
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
         return get_result_message("overwriting protected mapping not possible")
+    event_queue.put(Event(event_type=EventType.CREATE, mappings=mappings_new))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -71,7 +77,6 @@ def create_fn(logger, spec, meta, **kwargs):
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def update_fn(logger, spec, old, new, diff, **kwargs):
-    event_queue.put("Updating configmap ...")
     if not new or "spec" not in new:
         return get_result_message(f"invalid schema {new}")
     if "mappings" not in new["spec"]:
@@ -84,7 +89,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
         old_role_mappings = AuthMappingList(old["spec"]["mappings"])
 
     if overwrites_protected_mapping(logger, new_role_mappings):
-        return get_result_message("overwriting protected mapping not possible")
+        raise kopf.PermanentError("Overwriting protected mapping not possible!")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -114,7 +119,7 @@ def delete_fn(logger, spec, meta, **kwarg):
         return get_result_message(f"invalid schema {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
-        kopf.PermanentError("Overwriting protected mapping not possible!")
+        raise kopf.PermanentError("Overwriting protected mapping not possible!")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -136,7 +141,10 @@ def delete_fn(logger, spec, meta, **kwarg):
 
 
 @kopf.on.event(
-    "", "v1", "configmaps", when=cm_is_aws_auth,
+    "",
+    "v1",
+    "configmaps",
+    when=cm_is_aws_auth,
 )
 def log_config_map_change(logger, body, **kwargs):
     lm = get_last_handled_mapping()
@@ -148,11 +156,16 @@ def log_config_map_change(logger, body, **kwargs):
     else:
         logger.error(f"last mapping not found: {body}")
 
+
 @kopf.daemon(CRD_GROUP, CRD_VERSION, CRD_NAME, when=last_handled_filter)
 def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
-    while not stopped:   
+    while not stopped:
         if not event_queue.empty():
-            logger.info(event_queue.get())
+            event = event_queue.get()
+            if isinstance(event, Event):
+                logger.info(f"Got event: {event.event_type}")
+            else:
+                logger.info(event)
         stopped.wait(5.0)
 
     logger.info("We are done. Bye.")
