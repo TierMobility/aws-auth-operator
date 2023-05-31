@@ -17,7 +17,7 @@ jobs:
       USE_PROTECTED_MAPPING: true
     steps:
       - checkout
-      - run: poetry install 
+      - run: poetry install -v
       - run: poetry run pytest tests
 
   build-and-push-image:
