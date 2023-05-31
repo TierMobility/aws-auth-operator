@@ -15,13 +15,13 @@ class Event:
     old_mappings: AuthMappingList = None
 
 
-def create_mapping():
+def create_mapping(event: Event, logger):
     pass
 
 
-def update_mapping():
+def update_mapping(event: Event, logger):
     pass
 
 
-def delete_mapping():
+def delete_mapping(event: Event, logger):
     pass

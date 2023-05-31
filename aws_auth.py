@@ -17,6 +17,9 @@ from lib import (
     get_result_message,
     Event,
     EventType,
+    create_mapping,
+    update_mapping,
+    delete_mapping,
 )
 from lib.constants import *
 
@@ -166,6 +169,15 @@ def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_)
             event = event_queue.get()
             if isinstance(event, Event):
                 logger.info(f"Got event: {event.event_type}")
+                match event.event_type:
+                    case EventType.CREATE:
+                        create_mapping(event, logger)
+                    case EventType.UPDATE:
+                        update_mapping(event, logger)
+                    case EventType.DELETE:
+                        delete_mapping(event, logger)
+                    case _: 
+                        logger.error(f"Got unknown event type: {event.event_type}")
             else:
                 logger.info(event)
         stopped.wait(5.0)
