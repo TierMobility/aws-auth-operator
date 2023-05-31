@@ -149,15 +149,13 @@ def log_config_map_change(logger, body, **kwargs):
 
 @kopf.daemon(CRD_GROUP, CRD_VERSION, CRD_NAME, when=last_handled_filter)
 def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
-    print("start")
-    started = time.time()
-    while not stopped and time.time() - started <= 30:
+    while not stopped:
         logger.info(f"Something")        
         if not event_queue.empty():
-            print(event_queue.get())
+            logger.info(event_queue.get())
         stopped.wait(5.0)
 
-    print("We are done. Bye.")
+    logger.info("We are done. Bye.")
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
