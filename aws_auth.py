@@ -20,6 +20,7 @@ from lib.constants import *
 
 check_not_protected = lambda body, **_: body["metadata"]["name"] not in SYSTEM_MAPPINGS
 cm_is_aws_auth = lambda body, **_: body["metadata"]["name"] == "aws-auth"
+last_handled_filter = lambda body, **_: body["metadata"]["name"] == "aws-auth-last-handled"
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 event_queue = queue.Queue()
@@ -147,7 +148,7 @@ def log_config_map_change(logger, body, **kwargs):
         logger.error(f"last mapping not found: {body}")
 
 @kopf.daemon(CRD_GROUP, CRD_VERSION, CRD_NAME)
-def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
+def change_handler(stopped: kopf.DaemonStopped, when=last_handled_filter):
     print("start")
     started = time.time()
     while not stopped and time.time() - started <= 30:
