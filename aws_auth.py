@@ -55,7 +55,7 @@ def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
 
 @kopf.on.cleanup()
 def stop_background_worker(memo: kopf.Memo, **_):
-    memo.event_queue.put(None)
+    memo.event_queue.put("Finishing background task ...")
     memo.event_thread.join()
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
