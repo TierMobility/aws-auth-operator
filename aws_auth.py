@@ -3,6 +3,7 @@ import kopf
 import yaml
 import queue
 import time
+import threading
 from kubernetes.client.rest import ApiException
 
 from lib import (
@@ -48,7 +49,7 @@ def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
     memo.event_queue = queue.Queue()
-    memo.event_thread = threading.Thread(target=change_handler, args=(memo.my_queue,logger,))
+    memo.event_thread = threading.Thread(target=change_handler, args=(memo.event_queue,logger,))
     memo.event_thread.start()
     memo.event_queue.put("Starting Operator ...")
 
@@ -124,14 +125,14 @@ def update_fn(logger, spec, old, new, diff, memo: kopf.Memo, **kwargs):
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def delete_fn(logger, spec, meta, **kwarg):
+def delete_fn(logger, spec, meta, memo: kopf.Memo, **kwarg):
     logger.info(f"DELETING: {spec}")
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    event_queue.put(Event(event_type=EventType.DELETE, mappings=mappings_delete))
+    memo.event_queue.put(Event(event_type=EventType.DELETE, mappings=mappings_delete))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
