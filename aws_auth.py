@@ -30,11 +30,11 @@ last_handled_filter = (
 )
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
-event_queue = queue.Queue()
+
 
 
 @kopf.on.startup()
-def startup(logger, settings: kopf.OperatorSettings, **kwargs):
+def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
     # set api watching delay to 1s
     settings.watching.reconnect_backoff = 1
     if os.getenv(USE_PROTECTED_MAPPING) == "true":
@@ -47,18 +47,25 @@ def startup(logger, settings: kopf.OperatorSettings, **kwargs):
             logger.info(role_mappings)
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
-    event_queue.put("Starting Operator ...")
+    memo.event_queue = queue.Queue()
+    memo.event_thread = threading.Thread(target=change_handler, args=(memo.my_queue,))
+    memo.event_thread.start()
+    memo.event_queue.put("Starting Operator ...")
 
+@kopf.on.cleanup()
+def stop_background_worker(memo: kopf.Memo, **_):
+    memo.event_queue.put(None)
+    memo.event_thread.join()
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def create_fn(logger, spec, meta, **kwargs):
+def create_fn(logger, spec, meta, memo: kopf.Memo, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
         return get_result_message("overwriting protected mapping not possible")
-    event_queue.put(Event(event_type=EventType.CREATE, mappings=mappings_new))
+    memo.event_queue.put(Event(event_type=EventType.CREATE, mappings=mappings_new))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -79,7 +86,7 @@ def create_fn(logger, spec, meta, **kwargs):
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def update_fn(logger, spec, old, new, diff, **kwargs):
+def update_fn(logger, spec, old, new, diff, memo: kopf.Memo, **kwargs):
     if not new or "spec" not in new:
         return get_result_message(f"invalid schema {new}")
     if "mappings" not in new["spec"]:
@@ -93,7 +100,7 @@ def update_fn(logger, spec, old, new, diff, **kwargs):
 
     if overwrites_protected_mapping(logger, new_role_mappings):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    event_queue.put(Event(event_type=EventType.UPDATE, mappings=new_role_mappings, old_mappings=old_role_mappings))
+    memo.event_queue.put(Event(event_type=EventType.UPDATE, mappings=new_role_mappings, old_mappings=old_role_mappings))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -162,9 +169,8 @@ def log_config_map_change(logger, body, **kwargs):
         logger.error(f"last mapping not found: {body}")
 
 
-@kopf.daemon(CRD_GROUP, CRD_VERSION, CRD_NAME, when=last_handled_filter)
-def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_):
-    while not stopped:
+def change_handler(event_queue: queue.Queue):
+    while True:
         if not event_queue.empty():
             event = event_queue.get()
             if isinstance(event, Event):
@@ -180,9 +186,7 @@ def change_handler(stopped: kopf.DaemonStopped, spec, logger, retry, patch, **_)
                         logger.error(f"Got unknown event type: {event.event_type}")
             else:
                 logger.info(event)
-        stopped.wait(5.0)
-
-    logger.info("We are done. Bye.")
+        time.sleep(5)    
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:
