@@ -48,7 +48,7 @@ def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
     memo.event_queue = queue.Queue()
-    memo.event_thread = threading.Thread(target=change_handler, args=(memo.my_queue,))
+    memo.event_thread = threading.Thread(target=change_handler, args=(memo.my_queue,logger,))
     memo.event_thread.start()
     memo.event_queue.put("Starting Operator ...")
 
@@ -169,7 +169,7 @@ def log_config_map_change(logger, body, **kwargs):
         logger.error(f"last mapping not found: {body}")
 
 
-def change_handler(event_queue: queue.Queue):
+def change_handler(event_queue: queue.Queue, logger):
     while True:
         if not event_queue.empty():
             event = event_queue.get()
