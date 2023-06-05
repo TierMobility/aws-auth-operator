@@ -60,7 +60,7 @@ def test_run():
     assert 1 == 1
 
 
-@pytest.mark.skip(reason="no way of currently testing this")
+#@pytest.mark.skip(reason="no way of currently testing this")
 def test_create(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
@@ -79,19 +79,20 @@ def test_create(mocker):
         memo=TEST_MEMO,
         kwargs={},
     )
-    assert "All good" == message["message"]
+    assert "Processing" == message["message"]
+    assert not TEST_MEMO.event_queue.empty()
     # asserts
-    aws_auth.get_config_map.assert_called_once()
-    aws_auth.write_config_map.assert_called_once()
-    aws_auth.get_protected_mapping.assert_called_once()
-    config_map, _ = aws_auth.write_config_map.call_args
-    assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
-    data = {
-        "mapRoles": yaml.dump(
-            rename_arn_keys([DATA_DEFAULT, DATA_CREATE]), default_flow_style=False
-        )
-    }
-    assert config_map[0].data == data
+    # aws_auth.get_config_map.assert_called_once()
+    # aws_auth.write_config_map.assert_called_once()
+    # aws_auth.get_protected_mapping.assert_called_once()
+    # config_map, _ = aws_auth.write_config_map.call_args
+    # assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
+    # data = {
+    #     "mapRoles": yaml.dump(
+    #         rename_arn_keys([DATA_DEFAULT, DATA_CREATE]), default_flow_style=False
+    #     )
+    # }
+    # assert config_map[0].data == data
 
 
 def test_delete(mocker):
@@ -155,14 +156,14 @@ def test_update(mocker):
 @pytest.mark.skip(reason="no way of currently testing this")
 def test_create_failed(mocker):
     with pytest.raises(kopf.PermanentError) as err:
-        mocker.patch("aws_auth.get_protected_mapping")
-        mocker.patch("aws_auth.get_config_map")
-        mocker.patch("aws_auth.write_config_map")
-        mocker.patch("aws_auth.write_last_handled_mapping")
-        aws_auth.get_config_map.return_value = build_cm()
-        aws_auth.write_config_map.return_value = build_cm(default={})
+        # mocker.patch("aws_auth.get_protected_mapping")
+        # mocker.patch("aws_auth.get_config_map")
+        # mocker.patch("aws_auth.write_config_map")
+        # mocker.patch("aws_auth.write_last_handled_mapping")
+        # aws_auth.get_config_map.return_value = build_cm()
+        # aws_auth.write_config_map.return_value = build_cm(default={})
         aws_auth.create_fn(
-            logger, spec={"mappings": [DATA_CREATE]}, meta={}, memo=TEST_MEMO, kwargs={}
+            logger, spec={"mappings": [DATA_CREATE]}, meta={}, name="test", memo=TEST_MEMO, kwargs={}
         )
 
     assert "Add Roles failed" in str(err)
@@ -261,7 +262,6 @@ def test_startup(mocker):
     aws_auth.write_protected_mapping.assert_called_once()
 
 
-@pytest.mark.skip(reason="no way of currently testing this")
 def test_create_overwrite_protected_mapping(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")

@@ -5,7 +5,6 @@ from lib import (
     write_config_map,
     write_last_handled_mapping,
     update_mapping_status,
-    get_result_message,
 )
 from kubernetes.client.rest import ApiException
 from enum import Enum
@@ -13,7 +12,6 @@ from dataclasses import dataclass
 import queue
 import threading
 import time
-import datetime
 
 
 class EventType(Enum):
