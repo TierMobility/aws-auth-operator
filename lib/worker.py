@@ -5,7 +5,7 @@ from lib import (
     write_config_map,
     write_last_handled_mapping,
     update_mapping_status,
-    get_result_message
+    get_result_message,
 )
 from kubernetes.client.rest import ApiException
 from enum import Enum
@@ -70,7 +70,6 @@ class Worker(threading.Thread):
 
 
 def create_mapping(event: Event, logger):
-    pass
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -88,20 +87,20 @@ def create_mapping(event: Event, logger):
             update_mapping_status(
                 logger,
                 event.object_name,
-                {"status": {"create_fn": get_result_message("Error")}},
+                {"create_fn": get_result_message("Error")},
             )
         else:
             update_mapping_status(
                 logger,
                 event.object_name,
-                {"status": {"create_fn": get_result_message("All good")}},
+                {"create_fn": get_result_message("All good")},
             )
     except ApiException as e:
         logger.error(f"Exception: {e}")
         update_mapping_status(
             logger,
             event.object_name,
-            {"status": {"create_fn": get_result_message("Error")}},
+            {"create_fn": get_result_message("Error")},
         )
 
 

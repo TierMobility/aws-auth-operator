@@ -98,7 +98,7 @@ def update_mapping_status(logger, name: str, status_update: Dict):
     api_instance = get_custom_object_api()
     try:
         pm = api_instance.patch_cluster_custom_object(
-            CRD_GROUP, CRD_VERSION, CRD_NAME, name, status_update
+            CRD_GROUP, CRD_VERSION, CRD_NAME, name, {"status": status_update}
         )
         logger.debug(pm)
     except ApiException as e:
