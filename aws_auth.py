@@ -21,6 +21,7 @@ from lib import (
     create_mapping,
     update_mapping,
     delete_mapping,
+    Worker,
 )
 from lib.constants import *
 
@@ -49,13 +50,14 @@ def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
     memo.event_queue = queue.Queue()
-    memo.event_thread = threading.Thread(target=change_handler, args=(memo.event_queue,logger,))
+    memo.event_thread = Worker(memo.event_queue,logger)
     memo.event_thread.start()
     memo.event_queue.put("Starting Operator ...")
 
 @kopf.on.cleanup()
 def stop_background_worker(memo: kopf.Memo, **_):
     memo.event_queue.put("Finishing background task ...")
+    memo.event_thread.shutdown_flag.set()
     memo.event_thread.join()
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -170,24 +172,24 @@ def log_config_map_change(logger, body, **kwargs):
         logger.error(f"last mapping not found: {body}")
 
 
-def change_handler(event_queue: queue.Queue, logger):
-    while True:
-        if not event_queue.empty():
-            event = event_queue.get()
-            if isinstance(event, Event):
-                logger.info(f"Got event: {event.event_type}")
-                match event.event_type:
-                    case EventType.CREATE:
-                        create_mapping(event, logger)
-                    case EventType.UPDATE:
-                        update_mapping(event, logger)
-                    case EventType.DELETE:
-                        delete_mapping(event, logger)
-                    case _: 
-                        logger.error(f"Got unknown event type: {event.event_type}")
-            else:
-                logger.info(event)
-        time.sleep(5)    
+# def change_handler(event_queue: queue.Queue, logger):
+#     while True:
+#         if not event_queue.empty():
+#             event = event_queue.get()
+#             if isinstance(event, Event):
+#                 logger.info(f"Got event: {event.event_type}")
+#                 match event.event_type:
+#                     case EventType.CREATE:
+#                         create_mapping(event, logger)
+#                     case EventType.UPDATE:
+#                         update_mapping(event, logger)
+#                     case EventType.DELETE:
+#                         delete_mapping(event, logger)
+#                     case _: 
+#                         logger.error(f"Got unknown event type: {event.event_type}")
+#             else:
+#                 logger.info(event)
+#         time.sleep(5)    
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:

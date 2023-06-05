@@ -3,6 +3,8 @@ from lib import get_config_map, update_config_map, write_config_map, write_last_
 from kubernetes.client.rest import ApiException
 from enum import Enum
 from dataclasses import dataclass
+import queue
+import threading
 
 class EventType(Enum):
     CREATE = 0
@@ -15,6 +17,43 @@ class Event:
     event_type: EventType
     mappings: AuthMappingList
     old_mappings: AuthMappingList = None
+
+class Worker(threading.Thread):
+ 
+    def __init__(self,event_queue: queue.Queue, logger):
+        threading.Thread.__init__(self)
+ 
+        # The shutdown_flag is a threading.Event object that
+        # indicates whether the thread should be terminated.
+        self.shutdown_flag = threading.Event()
+        self.event_queue = event_queue
+        self.logger = logger
+ 
+        # ... Other thread setup code here ...
+ 
+    def run(self):
+        print('Thread #%s started' % self.ident)
+ 
+        while not self.shutdown_flag.is_set():
+            if not self.event_queue.empty():
+                event = self.event_queue.get()
+                if isinstance(event, Event):
+                    self.logger.info(f"Got event: {event.event_type}")
+                    match event.event_type:
+                        case EventType.CREATE:
+                            create_mapping(event, self.logger)
+                        case EventType.UPDATE:
+                            update_mapping(event, self.logger)
+                        case EventType.DELETE:
+                            delete_mapping(event, self.logger)
+                        case _: 
+                            self.logger.error(f"Got unknown event type: {event.event_type}")
+                else:
+                    self.logger.info(event)
+            time.sleep(5)   
+ 
+        # ... Clean shutdown code here ...
+        print('Thread #%s stopped' % self.ident)
 
 
 def create_mapping(event: Event, logger):
@@ -31,7 +70,7 @@ def create_mapping(event: Event, logger):
         )
         response = write_config_map(auth_config_map)
         response_data = AuthMappingList(data=response.data)
-        if mappings_new not in response_data:
+        if event.mappings not in response_data:
             logger.error("Add Roles failed")
     except ApiException as e:
         logger.error(f"Exception: {e}")
