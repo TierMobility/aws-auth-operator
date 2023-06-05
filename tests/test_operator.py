@@ -71,7 +71,7 @@ def test_create(mocker):
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     message = aws_auth.create_fn(
-        logger, spec={"mappings": [DATA_CREATE]}, meta={}, memo=TEST_MEMO, kwargs={}
+        logger, spec={"mappings": [DATA_CREATE]}, meta={},name="test",  memo=TEST_MEMO, kwargs={}
     )
     assert "All good" == message["message"]
     # asserts
@@ -96,7 +96,7 @@ def test_delete(mocker):
     aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     aws_auth.write_config_map.return_value = build_cm()
     message = aws_auth.delete_fn(
-        logger, spec={"mappings": [DATA_CREATE]}, meta={}, memo=TEST_MEMO, kwargs={}
+        logger, spec={"mappings": [DATA_CREATE]}, meta={}, name="test",  memo=TEST_MEMO, kwargs={}
     )
     assert "All good" == message["message"]
     # asserts
@@ -119,7 +119,7 @@ def test_update(mocker):
     aws_auth.write_config_map.return_value = build_cm(default=DATA_UPDATE)
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {"spec": {"mappings": [DATA_UPDATE]}}
-    message = aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, memo=TEST_MEMO, kwargs={})
+    message = aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={},name="test",  memo=TEST_MEMO, kwargs={})
     assert "All good" == message["message"]
     # asserts
     aws_auth.get_config_map.assert_called_once()
@@ -155,7 +155,7 @@ def test_update_failed(mocker):
         aws_auth.write_config_map.return_value = build_cm()
         old = {"spec": {"mappings": [DATA_DEFAULT]}}
         new = {"spec": {"mappings": [DATA_UPDATE]}}
-        aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={}, memo=TEST_MEMO, kwargs={})
+        aws_auth.update_fn(logger, old=old, new=new, spec={}, diff={},name="test",  memo=TEST_MEMO, kwargs={})
 
     assert "Update Roles failed" in str(err)
 
@@ -168,13 +168,13 @@ def test_delete_failed(mocker):
         mocker.patch("aws_auth.write_last_handled_mapping")
         aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
         aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
-        aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={}, memo=TEST_MEMO, kwargs={})
+        aws_auth.delete_fn(logger, spec={"mappings": [DATA_CREATE]}, meta={},name="test",  memo=TEST_MEMO, kwargs={})
 
     assert "Delete Roles failed" in str(err)
 
 
 def test_create_invalid_spec():
-    message = aws_auth.create_fn(logger, spec={},name="test", meta={"object":{"name":"test"}}, memo=TEST_MEMO, kwargs={})
+    message = aws_auth.create_fn(logger, spec={}, meta={"object":{"name":"test"}},name="test",  memo=TEST_MEMO, kwargs={})
     assert "invalid schema {}" == message["message"]
 
 
@@ -182,13 +182,13 @@ def test_update_invalid_spec():
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {}
     message = message = aws_auth.update_fn(
-        logger, old=old, new=new, spec={}, diff={}, memo=TEST_MEMO, kwargs={}
+        logger, old=old, new=new, spec={}, diff={},name="test",  memo=TEST_MEMO, kwargs={}
     )
     assert "invalid schema {}" == message["message"]
 
 
 def test_delete_invalid_spec():
-    message = aws_auth.delete_fn(logger, spec={}, meta={}, memo=TEST_MEMO, kwargs={})
+    message = aws_auth.delete_fn(logger, spec={}, meta={},name="test",  memo=TEST_MEMO, kwargs={})
     assert "invalid schema {}" == message["message"]
 
 @pytest.mark.skip(reason="no way of currently testing this")
@@ -213,7 +213,7 @@ def test_create_overwrite_protected_mapping(mocker):
     aws_auth.get_config_map.return_value = build_cm()
     aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     message = aws_auth.create_fn(
-        logger, spec={"mappings": [DATA_CREATE]}, meta={}, memo=TEST_MEMO, kwargs={}
+        logger, spec={"mappings": [DATA_CREATE]}, meta={},name="test",  memo=TEST_MEMO, kwargs={}
     )
     assert "overwriting protected mapping not possible" == message["message"]
     # asserts

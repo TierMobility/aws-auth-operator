@@ -70,7 +70,7 @@ def create_fn(logger, spec, name, meta, memo: kopf.Memo, **kwargs):
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
         return get_result_message("overwriting protected mapping not possible")
-    memo.event_queue.put(Event(event_type=EventType.CREATE, mappings=mappings_new))
+    memo.event_queue.put(Event(event_type=EventType.CREATE, object_name=name, mappings=mappings_new))
     # try:
     #     auth_config_map = get_config_map()
     #     current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -91,7 +91,7 @@ def create_fn(logger, spec, name, meta, memo: kopf.Memo, **kwargs):
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def update_fn(logger, spec, old, new, diff, memo: kopf.Memo, **kwargs):
+def update_fn(logger, spec, old, new, diff, name, memo: kopf.Memo, **kwargs):
     if not new or "spec" not in new:
         return get_result_message(f"invalid schema {new}")
     if "mappings" not in new["spec"]:
@@ -105,7 +105,7 @@ def update_fn(logger, spec, old, new, diff, memo: kopf.Memo, **kwargs):
 
     if overwrites_protected_mapping(logger, new_role_mappings):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    memo.event_queue.put(Event(event_type=EventType.UPDATE, mappings=new_role_mappings, old_mappings=old_role_mappings))
+    memo.event_queue.put(Event(event_type=EventType.UPDATE,object_name=name, mappings=new_role_mappings, old_mappings=old_role_mappings))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -129,14 +129,14 @@ def update_fn(logger, spec, old, new, diff, memo: kopf.Memo, **kwargs):
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
-def delete_fn(logger, spec, meta, memo: kopf.Memo, **kwarg):
+def delete_fn(logger, spec, meta, name, memo: kopf.Memo, **kwarg):
     logger.info(f"DELETING: {spec}")
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    memo.event_queue.put(Event(event_type=EventType.DELETE, mappings=mappings_delete))
+    memo.event_queue.put(Event(event_type=EventType.DELETE,object_name=name, mappings=mappings_delete))
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)

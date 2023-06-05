@@ -1,11 +1,12 @@
 from lib.mappings import AuthMappingList
-from lib import get_config_map, update_config_map, write_config_map, write_last_handled_mapping
+from lib import get_config_map, update_config_map, write_config_map, write_last_handled_mapping, update_mapping_status
 from kubernetes.client.rest import ApiException
 from enum import Enum
 from dataclasses import dataclass
 import queue
 import threading
 import time
+import datetime;
 
 class EventType(Enum):
     CREATE = 0
@@ -15,6 +16,7 @@ class EventType(Enum):
 
 @dataclass
 class Event:
+    object_name: str
     event_type: EventType
     mappings: AuthMappingList
     old_mappings: AuthMappingList = None
@@ -73,8 +75,8 @@ def create_mapping(event: Event, logger):
         response_data = AuthMappingList(data=response.data)
         if event.mappings not in response_data:
             logger.error("Add Roles failed")
-        # else:
-        #     update_mapping_status()
+        else:
+            update_mapping_status(logger, event.object_name, {"status":{"create_fn": {"message":"All good","timestamp": datetime.datetime.now()}}})
     except ApiException as e:
         logger.error(f"Exception: {e}")
 
