@@ -45,7 +45,7 @@ class Worker(threading.Thread):
         self.logger.info("Worker Thread #%s started" % self.ident)
 
         while not self.shutdown_flag.is_set():
-            if not self.event_queue.empty():
+            while not self.event_queue.empty():
                 event = self.event_queue.get()
                 if isinstance(event, Event):
                     self.logger.info(f"Got event: {event.event_type}")

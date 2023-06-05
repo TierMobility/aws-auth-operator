@@ -61,7 +61,6 @@ def test_run():
     assert 1 == 1
 
 
-# @pytest.mark.skip(reason="no way of currently testing this")
 def test_create(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
