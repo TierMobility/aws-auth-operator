@@ -174,7 +174,7 @@ def test_delete_failed(mocker):
 
 
 def test_create_invalid_spec():
-    message = aws_auth.create_fn(logger, spec={}, meta={}, memo=TEST_MEMO, kwargs={})
+    message = aws_auth.create_fn(logger, spec={}, meta={"object":{"name":"test"}}, memo=TEST_MEMO, kwargs={})
     assert "invalid schema {}" == message["message"]
 
 
