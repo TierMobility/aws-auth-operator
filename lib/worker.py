@@ -5,6 +5,7 @@ from lib import (
     write_config_map,
     write_last_handled_mapping,
     update_mapping_status,
+    get_result_message
 )
 from kubernetes.client.rest import ApiException
 from enum import Enum
