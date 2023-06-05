@@ -107,4 +107,20 @@ def update_mapping(event: Event, logger):
 
 
 def delete_mapping(event: Event, logger):
-    pass
+    try:
+        auth_config_map = get_config_map()
+        current_config_mapping = AuthMappingList(data=auth_config_map.data)
+
+        # save current config before change
+        write_last_handled_mapping(logger, current_config_mapping.get_values())
+        # remove old roles
+        current_config_mapping.remove_mappings(mappings_delete)
+        auth_config_map = update_config_map(
+            auth_config_map, current_config_mapping.get_data()
+        )
+        response = write_config_map(auth_config_map)
+        response_data = AuthMappingList(data=response.data)
+        if mappings_delete in response_data:
+            logger.error("Delete Roles failed")
+    except ApiException as e:
+        logger.error(f"Exception: {e}")
