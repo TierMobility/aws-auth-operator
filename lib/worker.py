@@ -33,7 +33,7 @@ class Worker(threading.Thread):
         # ... Other thread setup code here ...
  
     def run(self):
-        print('Thread #%s started' % self.ident)
+        self.logger.info('Worker Thread #%s started' % self.ident)
  
         while not self.shutdown_flag.is_set():
             if not self.event_queue.empty():
@@ -51,10 +51,10 @@ class Worker(threading.Thread):
                             self.logger.error(f"Got unknown event type: {event.event_type}")
                 else:
                     self.logger.info(event)
-            time.sleep(5)   
+            time.sleep(1)   
  
         # ... Clean shutdown code here ...
-        print('Thread #%s stopped' % self.ident)
+        self.logger.info('Worker #%s stopped' % self.ident)
 
 
 def create_mapping(event: Event, logger):
