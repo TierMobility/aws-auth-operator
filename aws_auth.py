@@ -67,23 +67,23 @@ def create_fn(logger, spec, meta, memo: kopf.Memo, **kwargs):
     if overwrites_protected_mapping(logger, mappings_new):
         return get_result_message("overwriting protected mapping not possible")
     memo.event_queue.put(Event(event_type=EventType.CREATE, mappings=mappings_new))
-    try:
-        auth_config_map = get_config_map()
-        current_config_mapping = AuthMappingList(data=auth_config_map.data)
-        # save current config before change
-        write_last_handled_mapping(logger, current_config_mapping.get_values())
-        # add new roles
-        current_config_mapping.merge_mappings(mappings_new)
-        auth_config_map = update_config_map(
-            auth_config_map, current_config_mapping.get_data()
-        )
-        response = write_config_map(auth_config_map)
-        response_data = AuthMappingList(data=response.data)
-        if mappings_new not in response_data:
-            raise kopf.PermanentError("Add Roles failed")
-    except ApiException as e:
-        raise kopf.PermanentError(f"Exception: {e}")
-    return get_result_message("All good")
+    # try:
+    #     auth_config_map = get_config_map()
+    #     current_config_mapping = AuthMappingList(data=auth_config_map.data)
+    #     # save current config before change
+    #     write_last_handled_mapping(logger, current_config_mapping.get_values())
+    #     # add new roles
+    #     current_config_mapping.merge_mappings(mappings_new)
+    #     auth_config_map = update_config_map(
+    #         auth_config_map, current_config_mapping.get_data()
+    #     )
+    #     response = write_config_map(auth_config_map)
+    #     response_data = AuthMappingList(data=response.data)
+    #     if mappings_new not in response_data:
+    #         raise kopf.PermanentError("Add Roles failed")
+    # except ApiException as e:
+    #     raise kopf.PermanentError(f"Exception: {e}")
+    return get_result_message("Processing")
 
 
 @kopf.on.update(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
