@@ -25,7 +25,7 @@ def create_mapping(event: Event, logger):
         # save current config before change
         write_last_handled_mapping(logger, current_config_mapping.get_values())
         # add new roles
-        current_config_mapping.merge_mappings(mappings_new)
+        current_config_mapping.merge_mappings(event.mappings)
         auth_config_map = update_config_map(
             auth_config_map, current_config_mapping.get_data()
         )
