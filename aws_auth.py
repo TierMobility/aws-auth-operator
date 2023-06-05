@@ -63,7 +63,7 @@ def stop_background_worker(memo: kopf.Memo, **_):
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def create_fn(logger, spec, meta, memo: kopf.Memo, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
-    if "object" in meta:
+    if "object" in meta.keys():
         logger.info(f"Name: {meta['object']['name']}")
     logger.info(meta)
     if not spec or "mappings" not in spec:
