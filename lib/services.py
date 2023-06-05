@@ -94,7 +94,6 @@ def update_mapping(logger, name: str, mappings: Dict):
         logger.error(e)
 
 def update_mapping_status(logger, name: str, status_update: Dict):
-    body = build_aws_auth_mapping(mappings, name)
     api_instance = get_custom_object_api()
     try:
         pm = api_instance.patch_cluster_custom_object_status(
