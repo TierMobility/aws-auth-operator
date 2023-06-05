@@ -33,8 +33,6 @@ last_handled_filter = (
 # kopf.config.WatchersConfig.watcher_retry_delay = 1
 
 
-
-
 @kopf.on.startup()
 def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
     # set api watching delay to 1s
@@ -50,9 +48,10 @@ def startup(logger, settings: kopf.OperatorSettings, memo: kopf.Memo, **kwargs):
             write_protected_mapping(logger, role_mappings.get_values())
         logger.info("Startup: {0}".format(pm))
     memo.event_queue = queue.Queue()
-    memo.event_thread = Worker(memo.event_queue,logger)
+    memo.event_thread = Worker(memo.event_queue, logger)
     memo.event_thread.start()
     memo.event_queue.put("Starting Operator ...")
+
 
 @kopf.on.cleanup()
 def stop_background_worker(memo: kopf.Memo, **_):
@@ -60,33 +59,18 @@ def stop_background_worker(memo: kopf.Memo, **_):
     memo.event_thread.shutdown_flag.set()
     memo.event_thread.join()
 
+
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def create_fn(logger, spec, name, meta, memo: kopf.Memo, **kwargs):
     logger.info(f"And here we are! Creating: {spec}")
-    logger.info(f"Name: {name}")
-    logger.info(meta)
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_new):
         return get_result_message("overwriting protected mapping not possible")
-    memo.event_queue.put(Event(event_type=EventType.CREATE, object_name=name, mappings=mappings_new))
-    # try:
-    #     auth_config_map = get_config_map()
-    #     current_config_mapping = AuthMappingList(data=auth_config_map.data)
-    #     # save current config before change
-    #     write_last_handled_mapping(logger, current_config_mapping.get_values())
-    #     # add new roles
-    #     current_config_mapping.merge_mappings(mappings_new)
-    #     auth_config_map = update_config_map(
-    #         auth_config_map, current_config_mapping.get_data()
-    #     )
-    #     response = write_config_map(auth_config_map)
-    #     response_data = AuthMappingList(data=response.data)
-    #     if mappings_new not in response_data:
-    #         raise kopf.PermanentError("Add Roles failed")
-    # except ApiException as e:
-    #     raise kopf.PermanentError(f"Exception: {e}")
+    memo.event_queue.put(
+        Event(event_type=EventType.CREATE, object_name=name, mappings=mappings_new)
+    )
     return get_result_message("Processing")
 
 
@@ -105,7 +89,14 @@ def update_fn(logger, spec, old, new, diff, name, memo: kopf.Memo, **kwargs):
 
     if overwrites_protected_mapping(logger, new_role_mappings):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    memo.event_queue.put(Event(event_type=EventType.UPDATE,object_name=name, mappings=new_role_mappings, old_mappings=old_role_mappings))
+    memo.event_queue.put(
+        Event(
+            event_type=EventType.UPDATE,
+            object_name=name,
+            mappings=new_role_mappings,
+            old_mappings=old_role_mappings,
+        )
+    )
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -136,7 +127,9 @@ def delete_fn(logger, spec, meta, name, memo: kopf.Memo, **kwarg):
     mappings_delete = AuthMappingList(spec["mappings"])
     if overwrites_protected_mapping(logger, mappings_delete):
         raise kopf.PermanentError("Overwriting protected mapping not possible!")
-    memo.event_queue.put(Event(event_type=EventType.DELETE,object_name=name, mappings=mappings_delete))
+    memo.event_queue.put(
+        Event(event_type=EventType.DELETE, object_name=name, mappings=mappings_delete)
+    )
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -172,26 +165,6 @@ def log_config_map_change(logger, body, **kwargs):
         logger.info(f"Change to aws-auth configmap: {change}")
     else:
         logger.error(f"last mapping not found: {body}")
-
-
-# def change_handler(event_queue: queue.Queue, logger):
-#     while True:
-#         if not event_queue.empty():
-#             event = event_queue.get()
-#             if isinstance(event, Event):
-#                 logger.info(f"Got event: {event.event_type}")
-#                 match event.event_type:
-#                     case EventType.CREATE:
-#                         create_mapping(event, logger)
-#                     case EventType.UPDATE:
-#                         update_mapping(event, logger)
-#                     case EventType.DELETE:
-#                         delete_mapping(event, logger)
-#                     case _: 
-#                         logger.error(f"Got unknown event type: {event.event_type}")
-#             else:
-#                 logger.info(event)
-#         time.sleep(5)    
 
 
 def overwrites_protected_mapping(logger, check_mapping: AuthMappingList) -> bool:

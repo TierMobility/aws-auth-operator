@@ -1,12 +1,19 @@
 from lib.mappings import AuthMappingList
-from lib import get_config_map, update_config_map, write_config_map, write_last_handled_mapping, update_mapping_status
+from lib import (
+    get_config_map,
+    update_config_map,
+    write_config_map,
+    write_last_handled_mapping,
+    update_mapping_status,
+)
 from kubernetes.client.rest import ApiException
 from enum import Enum
 from dataclasses import dataclass
 import queue
 import threading
 import time
-import datetime;
+import datetime
+
 
 class EventType(Enum):
     CREATE = 0
@@ -21,22 +28,22 @@ class Event:
     mappings: AuthMappingList
     old_mappings: AuthMappingList = None
 
+
 class Worker(threading.Thread):
- 
-    def __init__(self,event_queue: queue.Queue, logger):
+    def __init__(self, event_queue: queue.Queue, logger):
         threading.Thread.__init__(self)
- 
+
         # The shutdown_flag is a threading.Event object that
         # indicates whether the thread should be terminated.
         self.shutdown_flag = threading.Event()
         self.event_queue = event_queue
         self.logger = logger
- 
+
         # ... Other thread setup code here ...
- 
+
     def run(self):
-        self.logger.info('Worker Thread #%s started' % self.ident)
- 
+        self.logger.info("Worker Thread #%s started" % self.ident)
+
         while not self.shutdown_flag.is_set():
             if not self.event_queue.empty():
                 event = self.event_queue.get()
@@ -49,14 +56,16 @@ class Worker(threading.Thread):
                             update_mapping(event, self.logger)
                         case EventType.DELETE:
                             delete_mapping(event, self.logger)
-                        case _: 
-                            self.logger.error(f"Got unknown event type: {event.event_type}")
+                        case _:
+                            self.logger.error(
+                                f"Got unknown event type: {event.event_type}"
+                            )
                 else:
                     self.logger.info(event)
-            time.sleep(1)   
- 
+            time.sleep(1)
+
         # ... Clean shutdown code here ...
-        self.logger.info('Worker #%s stopped' % self.ident)
+        self.logger.info("Worker Thread #%s stopped" % self.ident)
 
 
 def create_mapping(event: Event, logger):
@@ -75,10 +84,24 @@ def create_mapping(event: Event, logger):
         response_data = AuthMappingList(data=response.data)
         if event.mappings not in response_data:
             logger.error("Add Roles failed")
+            update_mapping_status(
+                logger,
+                event.object_name,
+                {"status": {"create_fn": get_result_message("Error")}},
+            )
         else:
-            update_mapping_status(logger, event.object_name, {"status":{"create_fn": {"message":"All good","timestamp": datetime.datetime.now()}}})
+            update_mapping_status(
+                logger,
+                event.object_name,
+                {"status": {"create_fn": get_result_message("All good")}},
+            )
     except ApiException as e:
         logger.error(f"Exception: {e}")
+        update_mapping_status(
+            logger,
+            event.object_name,
+            {"status": {"create_fn": get_result_message("Error")}},
+        )
 
 
 def update_mapping(event: Event, logger):

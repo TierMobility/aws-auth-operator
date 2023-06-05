@@ -93,6 +93,7 @@ def update_mapping(logger, name: str, mappings: Dict):
     except ApiException as e:
         logger.error(e)
 
+
 def update_mapping_status(logger, name: str, status_update: Dict):
     api_instance = get_custom_object_api()
     try:
@@ -102,6 +103,7 @@ def update_mapping_status(logger, name: str, status_update: Dict):
         logger.debug(pm)
     except ApiException as e:
         logger.error(e)
+
 
 def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
     return kubernetes.client.CustomObjectsApi()
