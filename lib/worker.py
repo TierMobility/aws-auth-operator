@@ -5,6 +5,7 @@ from enum import Enum
 from dataclasses import dataclass
 import queue
 import threading
+import time
 
 class EventType(Enum):
     CREATE = 0
