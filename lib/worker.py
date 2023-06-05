@@ -1,5 +1,6 @@
 from lib.mappings import AuthMappingList
-from lib import get_config_map, update_config_map, write_config_map
+from lib import get_config_map, update_config_map, write_config_map, write_last_handled_mapping
+from kubernetes.client.rest import ApiException
 from enum import Enum
 from dataclasses import dataclass
 
