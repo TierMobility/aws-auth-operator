@@ -97,26 +97,26 @@ def update_fn(logger, spec, old, new, diff, name, memo: kopf.Memo, **kwargs):
             old_mappings=old_role_mappings,
         )
     )
-    try:
-        auth_config_map = get_config_map()
-        current_config_mapping = AuthMappingList(data=auth_config_map.data)
-        # save current config before change
-        write_last_handled_mapping(logger, current_config_mapping.get_values())
+    # try:
+    #     auth_config_map = get_config_map()
+    #     current_config_mapping = AuthMappingList(data=auth_config_map.data)
+    #     # save current config before change
+    #     write_last_handled_mapping(logger, current_config_mapping.get_values())
 
-        # remove old stuff first
-        current_config_mapping.remove_mappings(old_role_mappings)
-        # add new values
-        current_config_mapping.merge_mappings(new_role_mappings)
-        auth_config_map = update_config_map(
-            auth_config_map, current_config_mapping.get_data()
-        )
-        response = write_config_map(auth_config_map)
-        response_data = AuthMappingList(data=response.data)
-        if len(new_role_mappings) > 0 and new_role_mappings not in response_data:
-            raise kopf.PermanentError("Update Roles failed")
-    except ApiException as e:
-        raise kopf.PermanentError(f"Exception: {e}")
-    return get_result_message("All good")
+    #     # remove old stuff first
+    #     current_config_mapping.remove_mappings(old_role_mappings)
+    #     # add new values
+    #     current_config_mapping.merge_mappings(new_role_mappings)
+    #     auth_config_map = update_config_map(
+    #         auth_config_map, current_config_mapping.get_data()
+    #     )
+    #     response = write_config_map(auth_config_map)
+    #     response_data = AuthMappingList(data=response.data)
+    #     if len(new_role_mappings) > 0 and new_role_mappings not in response_data:
+    #         raise kopf.PermanentError("Update Roles failed")
+    # except ApiException as e:
+    #     raise kopf.PermanentError(f"Exception: {e}")
+    return get_result_message("Processing")
 
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
@@ -130,23 +130,6 @@ def delete_fn(logger, spec, meta, name, memo: kopf.Memo, **kwarg):
     memo.event_queue.put(
         Event(event_type=EventType.DELETE, object_name=name, mappings=mappings_delete)
     )
-    # try:
-        # auth_config_map = get_config_map()
-        # current_config_mapping = AuthMappingList(data=auth_config_map.data)
-
-        # # save current config before change
-        # write_last_handled_mapping(logger, current_config_mapping.get_values())
-        # # remove old roles
-        # current_config_mapping.remove_mappings(mappings_delete)
-        # auth_config_map = update_config_map(
-        #     auth_config_map, current_config_mapping.get_data()
-        # )
-        # response = write_config_map(auth_config_map)
-        # response_data = AuthMappingList(data=response.data)
-        # if mappings_delete in response_data:
-        #     raise kopf.PermanentError("Delete Roles failed")
-    # except ApiException as e:
-    #     raise kopf.PermanentError(f"Exception: {e}")
     return get_result_message("Processing")
 
 

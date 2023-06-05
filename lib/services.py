@@ -8,6 +8,7 @@ from lib.crd import build_aws_auth_mapping
 from typing import Dict, List
 import datetime
 
+
 def get_config_map() -> V1ConfigMap:
     api_instance = kubernetes.client.CoreV1Api()
     return api_instance.read_namespaced_config_map(CM_NAME, NAMESPACE)
@@ -107,6 +108,7 @@ def update_mapping_status(logger, name: str, status_update: Dict):
 
 def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
     return kubernetes.client.CustomObjectsApi()
+
 
 def get_result_message(message: str):
     return {
