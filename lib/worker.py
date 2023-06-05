@@ -69,6 +69,7 @@ class Worker(threading.Thread):
 
 
 def create_mapping(event: Event, logger):
+    logger.info(f"CREATING: {event.object_name}")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -104,6 +105,7 @@ def create_mapping(event: Event, logger):
 
 
 def update_mapping(event: Event, logger):
+    logger.info(f"UPDATING: {event.object_name}")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)
@@ -142,6 +144,7 @@ def update_mapping(event: Event, logger):
 
 
 def delete_mapping(event: Event, logger):
+    logger.info(f"DELETING: {event.object_name}")
     try:
         auth_config_map = get_config_map()
         current_config_mapping = AuthMappingList(data=auth_config_map.data)

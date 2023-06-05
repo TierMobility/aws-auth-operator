@@ -260,18 +260,20 @@ def test_delete_invalid_spec():
     assert "invalid schema {}" == message["message"]
 
 
-@pytest.mark.skip(reason="no way of currently testing this")
 def test_startup(mocker):
     settings = kopf.OperatorSettings()
     mocker.patch("aws_auth.kopf.login_via_client")
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
     mocker.patch("aws_auth.write_protected_mapping")
+    mocker.patch("aws_auth.Worker")
     aws_auth.get_protected_mapping.return_value = None
     aws_auth.startup(logger, settings=settings, memo=TEST_MEMO)
     aws_auth.get_protected_mapping.assert_called_once()
     aws_auth.get_config_map.assert_called_once()
     aws_auth.write_protected_mapping.assert_called_once()
+    assert not TEST_MEMO.event_queue.empty()
+    assert TEST_MEMO.event_queue.get() == "Starting Operator ..."
 
 
 def test_create_overwrite_protected_mapping(mocker):

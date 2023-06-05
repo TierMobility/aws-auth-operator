@@ -16,12 +16,9 @@ from lib import (
     write_last_handled_mapping,
     get_last_handled_mapping,
     get_result_message,
-    Event,
-    EventType,
-    create_mapping,
-    update_mapping,
-    delete_mapping,
     Worker,
+    Event,
+    EventType
 )
 from lib.constants import *
 
@@ -62,7 +59,6 @@ def stop_background_worker(memo: kopf.Memo, **_):
 
 @kopf.on.create(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def create_fn(logger, spec, name, meta, memo: kopf.Memo, **kwargs):
-    logger.info(f"And here we are! Creating: {spec}")
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_new = AuthMappingList(spec["mappings"])
@@ -102,7 +98,6 @@ def update_fn(logger, spec, old, new, diff, name, memo: kopf.Memo, **kwargs):
 
 @kopf.on.delete(CRD_GROUP, CRD_VERSION, CRD_NAME, when=check_not_protected)
 def delete_fn(logger, spec, meta, name, memo: kopf.Memo, **kwarg):
-    logger.info(f"DELETING: {spec}")
     if not spec or "mappings" not in spec:
         return get_result_message(f"invalid schema {spec}")
     mappings_delete = AuthMappingList(spec["mappings"])
