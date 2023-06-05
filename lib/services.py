@@ -93,6 +93,16 @@ def update_mapping(logger, name: str, mappings: Dict):
     except ApiException as e:
         logger.error(e)
 
+def update_mapping_status(logger, name: str, status_update: Dict):
+    body = build_aws_auth_mapping(mappings, name)
+    api_instance = get_custom_object_api()
+    try:
+        pm = api_instance.patch_cluster_custom_object_status(
+            CRD_GROUP, CRD_VERSION, CRD_NAME, name, status_update
+        )
+        logger.debug(pm)
+    except ApiException as e:
+        logger.error(e)
 
 def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
     return kubernetes.client.CustomObjectsApi()

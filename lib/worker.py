@@ -73,6 +73,8 @@ def create_mapping(event: Event, logger):
         response_data = AuthMappingList(data=response.data)
         if event.mappings not in response_data:
             logger.error("Add Roles failed")
+        # else:
+        #     update_mapping_status()
     except ApiException as e:
         logger.error(f"Exception: {e}")
 
