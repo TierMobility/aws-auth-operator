@@ -107,3 +107,18 @@ def test_update_mapping_failed(mocker):
     update_mapping(event, logger)
     logger.error.assert_called_once_with("Update Roles failed")
     lib.worker.update_mapping_status.assert_called_once()
+
+def test_delete_mapping_failed(mocker):
+    mocker.patch("lib.worker.get_config_map")
+    mocker.patch("lib.worker.write_config_map")
+    mocker.patch("lib.worker.write_last_handled_mapping")
+    mocker.patch("lib.worker.update_mapping_status")
+    lib.worker.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+    lib.worker.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+    logger = MagicMock()
+    spec = {"mappings": [DATA_CREATE]}
+    mappings = AuthMappingList(spec["mappings"])
+    event = Event(event_type=EventType.DELETE, object_name="test", mappings=mappings)
+    delete_mapping(event, logger)
+    logger.error.assert_called_once_with("Delete Roles failed")
+    lib.worker.update_mapping_status.assert_called_once()
