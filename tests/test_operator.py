@@ -100,15 +100,6 @@ def test_delete(mocker):
     assert not TEST_MEMO.event_queue.empty()
     assert TEST_MEMO.event_queue.get().event_type == EventType.DELETE
     aws_auth.get_protected_mapping.assert_called_once()
-    # asserts
-    # aws_auth.get_config_map.assert_called_once()
-    # aws_auth.write_config_map.assert_called_once()
-    # config_map, _ = aws_auth.write_config_map.call_args
-    # assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
-    # data = {
-    #     "mapRoles": yaml.dump(rename_arn_keys([DATA_DEFAULT]), default_flow_style=False)
-    # }
-    # assert config_map[0].data == data
 
 
 def test_update(mocker):
