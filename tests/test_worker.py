@@ -1,5 +1,5 @@
 from tests.test_operator import DATA_CREATE, DATA_DEFAULT,  build_cm, rename_arn_keys
-from lib import create_mapping, AuthMappingList, Event, EventType
+from lib import create_mapping, delete_mapping, AuthMappingList, Event, EventType
 from lib.worker import get_config_map, write_config_map
 import logging
 import lib
@@ -15,8 +15,8 @@ def test_create_mapping(mocker):
     lib.worker.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     logger = logging.Logger( __name__)
     spec = {"mappings": [DATA_CREATE]}
-    mappings_new = AuthMappingList(spec["mappings"])
-    event = Event(event_type=EventType.CREATE, object_name="test", mappings=mappings_new)
+    mappings = AuthMappingList(spec["mappings"])
+    event = Event(event_type=EventType.CREATE, object_name="test", mappings=mappings)
     create_mapping(event, logger)
     lib.worker.get_config_map.assert_called_once()
     lib.worker.write_config_map.assert_called_once()
@@ -33,5 +33,22 @@ def test_create_mapping(mocker):
 def test_update_mapping():
     pass
 
-def test_delete_mapping():
-    pass
+def test_delete_mapping(mocker):
+    mocker.patch("lib.worker.get_config_map")
+    mocker.patch("lib.worker.write_config_map")
+    mocker.patch("lib.worker.write_last_handled_mapping")
+    lib.worker.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
+    lib.worker.write_config_map.return_value = build_cm()
+    logger = logging.Logger( __name__)
+    spec = {"mappings": [DATA_CREATE]}
+    mappings = AuthMappingList(spec["mappings"])
+    event = Event(event_type=EventType.DELETE, object_name="test", mappings=mappings)
+    delete_mapping(event, logger)
+    lib.worker.get_config_map.assert_called_once()
+    lib.worker.write_config_map.assert_called_once()
+    config_map, _ = lib.worker.write_config_map.call_args
+    assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
+    data = {
+        "mapRoles": yaml.dump(rename_arn_keys([DATA_DEFAULT]), default_flow_style=False)
+    }
+    assert config_map[0].data == data

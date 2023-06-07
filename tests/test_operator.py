@@ -63,9 +63,6 @@ def test_run():
 
 def test_create(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
-    mocker.patch("aws_auth.get_config_map")
-    mocker.patch("aws_auth.write_config_map")
-    mocker.patch("aws_auth.write_last_handled_mapping")
     aws_auth.get_protected_mapping.return_value = {
         "spec": {"mappings": [DATA_NOT_CONTAINED]}
     }
@@ -102,6 +99,7 @@ def test_delete(mocker):
     assert "Processing" == message["message"]
     assert not TEST_MEMO.event_queue.empty()
     assert TEST_MEMO.event_queue.get().event_type == EventType.DELETE
+    aws_auth.get_protected_mapping.assert_called_once()
     # asserts
     # aws_auth.get_config_map.assert_called_once()
     # aws_auth.write_config_map.assert_called_once()
