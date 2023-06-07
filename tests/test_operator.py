@@ -69,8 +69,6 @@ def test_create(mocker):
     aws_auth.get_protected_mapping.return_value = {
         "spec": {"mappings": [DATA_NOT_CONTAINED]}
     }
-    aws_auth.get_config_map.return_value = build_cm()
-    aws_auth.write_config_map.return_value = build_cm(extra_data=DATA_CREATE)
     message = aws_auth.create_fn(
         logger,
         spec={"mappings": [DATA_CREATE]},
@@ -79,21 +77,11 @@ def test_create(mocker):
         memo=TEST_MEMO,
         kwargs={},
     )
+    # asserts
     assert "Processing" == message["message"]
     assert not TEST_MEMO.event_queue.empty()
     assert TEST_MEMO.event_queue.get().event_type == EventType.CREATE
-    # asserts
-    # aws_auth.get_config_map.assert_called_once()
-    # aws_auth.write_config_map.assert_called_once()
-    # aws_auth.get_protected_mapping.assert_called_once()
-    # config_map, _ = aws_auth.write_config_map.call_args
-    # assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
-    # data = {
-    #     "mapRoles": yaml.dump(
-    #         rename_arn_keys([DATA_DEFAULT, DATA_CREATE]), default_flow_style=False
-    #     )
-    # }
-    # assert config_map[0].data == data
+    aws_auth.get_protected_mapping.assert_called_once()
 
 
 def test_delete(mocker):
