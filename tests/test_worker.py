@@ -1,6 +1,7 @@
 from tests.test_operator import DATA_CREATE, DATA_DEFAULT, DATA_UPDATE, build_cm, rename_arn_keys
 from lib import create_mapping, delete_mapping, update_mapping, AuthMappingList, Event, EventType
 from lib.worker import get_config_map, write_config_map, update_mapping_status
+from unittest.mock import MagicMock
 import logging
 import lib
 import kubernetes
@@ -74,3 +75,18 @@ def test_delete_mapping(mocker):
         "mapRoles": yaml.dump(rename_arn_keys([DATA_DEFAULT]), default_flow_style=False)
     }
     assert config_map[0].data == data
+
+def test_create_mapping_failed(mocker):
+    mocker.patch("lib.worker.get_config_map")
+    mocker.patch("lib.worker.write_config_map")
+    mocker.patch("lib.worker.write_last_handled_mapping")
+    mocker.patch("lib.worker.update_mapping_status")
+    lib.worker.get_config_map.return_value = build_cm()
+    lib.worker.write_config_map.return_value = build_cm(default={})
+    logger = MagicMock()
+    spec = {"mappings": [DATA_CREATE]}
+    mappings = AuthMappingList(spec["mappings"])
+    event = Event(event_type=EventType.CREATE, object_name="test", mappings=mappings)
+    create_mapping(event, logger)
+    logger.error.assert_called_once_with("Add Roles failed")
+    lib.worker.update_mapping_status.assert_called_once()

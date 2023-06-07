@@ -84,10 +84,6 @@ def test_create(mocker):
 def test_delete(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
-    # mocker.patch("aws_auth.write_config_map")
-    # mocker.patch("aws_auth.write_last_handled_mapping")
-    # aws_auth.get_config_map.return_value = build_cm(extra_data=DATA_CREATE)
-    # aws_auth.write_config_map.return_value = build_cm()
     message = aws_auth.delete_fn(
         logger,
         spec={"mappings": [DATA_CREATE]},
@@ -105,10 +101,6 @@ def test_delete(mocker):
 def test_update(mocker):
     mocker.patch("aws_auth.get_protected_mapping")
     mocker.patch("aws_auth.get_config_map")
-    # mocker.patch("aws_auth.write_config_map")
-    # mocker.patch("aws_auth.write_last_handled_mapping")
-    # aws_auth.get_config_map.return_value = build_cm()
-    # aws_auth.write_config_map.return_value = build_cm(default=DATA_UPDATE)
     old = {"spec": {"mappings": [DATA_DEFAULT]}}
     new = {"spec": {"mappings": [DATA_UPDATE]}}
     message = aws_auth.update_fn(
@@ -124,15 +116,6 @@ def test_update(mocker):
     assert "Processing" == message["message"]
     assert not TEST_MEMO.event_queue.empty()
     assert TEST_MEMO.event_queue.get().event_type == EventType.UPDATE
-    # asserts
-    # aws_auth.get_config_map.assert_called_once()
-    # aws_auth.write_config_map.assert_called_once()
-    # config_map, _ = aws_auth.write_config_map.call_args
-    # assert isinstance(config_map[0], kubernetes.client.V1ConfigMap)
-    # data = {
-    #     "mapRoles": yaml.dump(rename_arn_keys([DATA_UPDATE]), default_flow_style=False)
-    # }
-    # assert config_map[0].data == data
 
 
 @pytest.mark.skip(reason="no way of currently testing this")
