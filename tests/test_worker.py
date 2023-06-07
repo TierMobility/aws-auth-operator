@@ -44,7 +44,7 @@ def test_update_mapping(mocker):
     logger = logging.Logger( __name__)
     mappings = AuthMappingList(new_spec["mappings"])
     mappings_old = AuthMappingList(old_spec["mappings"])
-    event = Event(event_type=EventType.DELETE, object_name="test", mappings=mappings, old_mappings=mappings_old)
+    event = Event(event_type=EventType.UPDATE, object_name="test", mappings=mappings, old_mappings=mappings_old)
     update_mapping(event, logger)
     lib.worker.update_mapping_status.assert_called_once()
     lib.worker.get_config_map.assert_called_once()
@@ -89,4 +89,21 @@ def test_create_mapping_failed(mocker):
     event = Event(event_type=EventType.CREATE, object_name="test", mappings=mappings)
     create_mapping(event, logger)
     logger.error.assert_called_once_with("Add Roles failed")
+    lib.worker.update_mapping_status.assert_called_once()
+
+def test_update_mapping_failed(mocker):
+    mocker.patch("lib.worker.get_config_map")
+    mocker.patch("lib.worker.write_config_map")
+    mocker.patch("lib.worker.write_last_handled_mapping")
+    mocker.patch("lib.worker.update_mapping_status")
+    lib.worker.get_config_map.return_value = build_cm()
+    lib.worker.write_config_map.return_value = build_cm()
+    old_spec = {"mappings": [DATA_DEFAULT]}
+    new_spec = {"mappings": [DATA_UPDATE]}
+    logger = MagicMock()
+    mappings = AuthMappingList(new_spec["mappings"])
+    mappings_old = AuthMappingList(old_spec["mappings"])
+    event = Event(event_type=EventType.UPDATE, object_name="test", mappings=mappings, old_mappings=mappings_old)
+    update_mapping(event, logger)
+    logger.error.assert_called_once_with("Update Roles failed")
     lib.worker.update_mapping_status.assert_called_once()
