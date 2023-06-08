@@ -20,14 +20,12 @@ class UserType(Enum):
 
 
 class AuthMapping:
-
     arn: str
     username: str
     groups: List
     usertype: UserType
 
     def __init__(self, mapping: Dict):
-
         if "arn" in mapping.keys():
             self.arn = mapping["arn"]
             self.usertype = UserType.value_of(mapping["usertype"])
@@ -67,7 +65,6 @@ class AuthMapping:
 
 
 class AuthMappingList:
-
     auth_mappings: Dict[str, AuthMapping]
 
     def __init__(self, mappings=None, data={}):

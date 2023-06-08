@@ -6,6 +6,7 @@ from kubernetes.client import V1ConfigMap
 from lib.constants import *
 from lib.crd import build_aws_auth_mapping
 from typing import Dict, List
+import datetime
 
 
 def get_config_map() -> V1ConfigMap:
@@ -94,5 +95,23 @@ def update_mapping(logger, name: str, mappings: Dict):
         logger.error(e)
 
 
+def update_mapping_status(logger, name: str, status_update: Dict):
+    api_instance = get_custom_object_api()
+    try:
+        pm = api_instance.patch_cluster_custom_object(
+            CRD_GROUP, CRD_VERSION, CRD_NAME, name, {"status": status_update}
+        )
+        logger.debug(pm)
+    except ApiException as e:
+        logger.error(e)
+
+
 def get_custom_object_api() -> kubernetes.client.CustomObjectsApi:
     return kubernetes.client.CustomObjectsApi()
+
+
+def get_result_message(message: str):
+    return {
+        "message": message,
+        "timestamp": str(datetime.datetime.now()),
+    }
