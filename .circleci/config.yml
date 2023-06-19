@@ -111,19 +111,20 @@ workflows:
           - dockerhub
         requires: 
           - pytest
-    # - deploy-to-stage:
-    #     context: global-staging
-    #     requires:
-    #       - build-and-push-image
-    #     filters:
-    #         branches:
-    #           only: 
-    #           - master           
-    # - deploy-to-production:
-    #     context: global-production
-    #     requires:
-    #       - deploy-to-stage
-    #     filters:
-    #         branches:
-    #           only: master
+    - deploy-to-stage:
+        context: global-staging
+        requires:
+          - build-and-push-image
+        filters:
+          branches:
+            only: 
+              - master           
+    - deploy-to-production:
+        context: global-production
+        requires:
+          - deploy-to-stage
+        filters:
+          branches:
+            only: 
+              - master     
 
